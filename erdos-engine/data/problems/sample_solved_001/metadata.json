@@ -1,0 +1,11 @@
+{
+  "id": "sample_solved_001",
+  "title": "Infinitely many primes",
+  "tags": ["number_theory", "primes"],
+  "status": "solved",
+  "known_solution_path": "data/problems/sample_solved_001/known_solution.md",
+  "source_url": null,
+  "difficulty_guess": "intro",
+  "computationally_testable": true,
+  "formalizable": true
+}
