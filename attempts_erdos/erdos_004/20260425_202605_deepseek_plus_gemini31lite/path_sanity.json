@@ -1,0 +1,24 @@
+{
+  "problem_id": "erdos_004",
+  "attempt_dir": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_202605_deepseek_plus_gemini31lite",
+  "events_count": 163,
+  "move_events_count": 76,
+  "eval_events_count": 75,
+  "milestone_hits": {
+    "reduction_interval_to_gap": 60,
+    "crt_covering": 30,
+    "asymptotic_bridge": 48,
+    "known_solution_lineage": 6
+  },
+  "milestone_coverage": 1.0,
+  "red_flags": {
+    "domain_mistake": 16
+  },
+  "flag_density": 0.211,
+  "rejection_reason_categories": {
+    "lean_unmapped_or_other": 75
+  },
+  "checker_disagreement_ratio": 1.0,
+  "confidence": 0.666,
+  "on_correct_path": false
+}

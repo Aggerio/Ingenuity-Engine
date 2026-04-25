@@ -1,0 +1,5 @@
+{
+  "elan": "elan 4.2.1 (3d5138e15 2026-03-18)",
+  "lake": "Lake version 5.0.0-src+3dc1a08 (Lean version 4.30.0-rc2)",
+  "lake_build": "✔ [8332/8334] Built ErdosEngine.Main (42s)\n✔ [8333/8334] Built ErdosEngine (5.9s)\nBuild completed successfully (8334 jobs).\n"
+}
