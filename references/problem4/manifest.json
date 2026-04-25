@@ -1,0 +1,38 @@
+[
+  {
+    "key": "Ma16",
+    "title": "Large gaps between primes",
+    "authors": "James Maynard",
+    "arxiv_id": "1408.5110v2",
+    "pdf_path": "references/problem4/Ma16_1408.5110.pdf",
+    "source_path": "references/problem4/Ma16_1408.5110.tar.gz",
+    "pdf_url": "https://arxiv.org/pdf/1408.5110v2.pdf",
+    "source_url": "https://arxiv.org/e-print/1408.5110v2",
+    "pdf_size": 189581,
+    "source_size": 16963
+  },
+  {
+    "key": "FGKT16",
+    "title": "Large gaps between consecutive prime numbers",
+    "authors": "Kevin Ford, Ben Green, Sergei Konyagin, Terence Tao",
+    "arxiv_id": "1408.4505v2",
+    "pdf_path": "references/problem4/FGKT16_1408.4505.pdf",
+    "source_path": "references/problem4/FGKT16_1408.4505.tar.gz",
+    "pdf_url": "https://arxiv.org/pdf/1408.4505v2.pdf",
+    "source_url": "https://arxiv.org/e-print/1408.4505v2",
+    "pdf_size": 346253,
+    "source_size": 37345
+  },
+  {
+    "key": "FGKMT18",
+    "title": "Long gaps between primes",
+    "authors": "Kevin Ford, Ben Green, Sergei Konyagin, James Maynard, Terence Tao",
+    "arxiv_id": "1412.5029v3",
+    "pdf_path": "references/problem4/FGKMT18_1412.5029.pdf",
+    "source_path": "references/problem4/FGKMT18_1412.5029.tar.gz",
+    "pdf_url": "https://arxiv.org/pdf/1412.5029v3.pdf",
+    "source_url": "https://arxiv.org/e-print/1412.5029v3",
+    "pdf_size": 414213,
+    "source_size": 40066
+  }
+]
