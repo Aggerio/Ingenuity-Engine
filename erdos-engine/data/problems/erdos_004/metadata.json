@@ -1,0 +1,14 @@
+{
+  "id": "erdos_004",
+  "title": "Erdos Problem #4",
+  "status": "solved",
+  "tags": [
+    "number theory",
+    "primes"
+  ],
+  "known_solution_path": "known_solution.md",
+  "source_url": "https://www.erdosproblems.com/4",
+  "difficulty_guess": "unknown",
+  "computationally_testable": true,
+  "formalizable": true
+}
