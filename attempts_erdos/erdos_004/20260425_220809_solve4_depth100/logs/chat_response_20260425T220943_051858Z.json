@@ -1,0 +1,48 @@
+{
+  "model": "deepseek/deepseek-v4-flash",
+  "prompt_preview": "You are a mathematical research assistant inside a proof-search harness.\n\nYou are NOT allowed to claim a proof is complete unless the checker verifies it.\nUse case-based reasoning: reuse proven patterns only when preconditions match.\n\nGiven:\n- problem statement\n- current subgoals\n- accepted claims\n- rejected claims\n- failed attempts\n- retrieved lemmas/proof moves\n- similar solved cases with steps and why they worked\n\nGenerate exactly 2 candidate moves.\n\nEach move MUST be JSON with:\n- move_type\n- claim\n- rationale\n- test_plan\n- dependencies\n- expected_effect\n- risk\n- matched_prior_case_ids\n- why_this_applies_here\n- required_preconditions\n- how_to_falsify_fast\n- target_milestone\n\nValid target_milestone values:\n- reduction_interval_to_gap\n- crt_covering\n- asymptotic_bridge\n- validation_or_refutation\n\nRules:\n- Be precise and falsifiable.\n- Do not repeat rejected or near-duplicate moves.\n- Explain transfer from solved cases explicitly.\n- If preconditions are uncertain, say so and add fast f",
+  "response_body": {
+    "id": "gen-1777154955-N36wl4qfMZcEDKZwYuri",
+    "object": "chat.completion",
+    "created": 1777154955,
+    "model": "deepseek/deepseek-v4-flash-20260423",
+    "provider": "DeepSeek",
+    "system_fingerprint": "fp_058df29938_prod0820_fp8_kvcache_20260402",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "length",
+        "native_finish_reason": "length",
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 3544,
+      "completion_tokens": 2200,
+      "total_tokens": 5744,
+      "cost": 0.000725088,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 3456,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.000725088,
+        "upstream_inference_prompt_cost": 0.000109088,
+        "upstream_inference_completions_cost": 0.000616
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2200,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  }
+}
