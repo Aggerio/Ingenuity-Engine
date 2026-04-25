@@ -1,0 +1,20 @@
+# Secrets and local env
+**/.env
+
+# Python cache/build artifacts
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.cache/
+
+# Lean/Lake generated outputs
+**/.lake/
+**/*.olean
+**/*.olean.private
+**/*.ir
+
+# Nested repository metadata accidentally copied into data snapshots
+**/.git/
+
+# Local backup artifacts
+**/*.bak.*

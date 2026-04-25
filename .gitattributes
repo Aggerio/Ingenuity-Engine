@@ -1,0 +1,1 @@
+previous-info/naturalproofs/*.json filter=lfs diff=lfs merge=lfs -text
