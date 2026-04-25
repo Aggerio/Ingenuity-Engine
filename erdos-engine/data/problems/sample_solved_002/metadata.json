@@ -1,0 +1,11 @@
+{
+  "id": "sample_solved_002",
+  "title": "Every graph on 6 vertices has triangle or independent triple",
+  "tags": ["graph_theory", "ramsey"],
+  "status": "solved",
+  "known_solution_path": "data/problems/sample_solved_002/known_solution.md",
+  "source_url": null,
+  "difficulty_guess": "intermediate",
+  "computationally_testable": true,
+  "formalizable": true
+}
