@@ -2,21 +2,35 @@
 
 from __future__ import annotations
 
+from erdos_engine.models import DerivationChain
 from erdos_engine.models import RetrievedItem
+from erdos_engine.retrieval.theorem_graph import TheoremGraphPlanner
 from erdos_engine.retrieval.embeddings import EmbeddingsRetriever
 from erdos_engine.retrieval.keyword import KeywordRetriever
 from erdos_engine.store.failure_store import FailureStore
 from erdos_engine.store.lemma_store import LemmaStore
+from erdos_engine.store.theorem_graph_store import TheoremGraphStore
 
 
 class HybridRetriever:
     """Combine retrieval from lemmas, proof moves, and failure memory."""
 
-    def __init__(self, lemma_store: LemmaStore, failure_store: FailureStore) -> None:
+    def __init__(
+        self,
+        lemma_store: LemmaStore,
+        failure_store: FailureStore,
+        theorem_graph_store: TheoremGraphStore | None = None,
+    ) -> None:
         self.lemma_store = lemma_store
         self.failure_store = failure_store
+        self.theorem_graph_store = theorem_graph_store
         self.keyword = KeywordRetriever()
         self.embeddings = EmbeddingsRetriever()
+        self._latest_chains: list[DerivationChain] = []
+
+    @property
+    def latest_chains(self) -> list[DerivationChain]:
+        return list(self._latest_chains)
 
     def retrieve(self, query: str, tags: list[str], top_k: int, problem_id: str) -> list[RetrievedItem]:
         docs: list[tuple[str, str, str, dict]] = []
@@ -50,6 +64,28 @@ class HybridRetriever:
                     failure,
                 )
             )
+
+        self._latest_chains = []
+        if self.theorem_graph_store is not None:
+            nodes = self.theorem_graph_store.load_nodes()
+            edges = self.theorem_graph_store.load_edges()
+            planner = TheoremGraphPlanner(nodes, edges)
+            chains = planner.propose_chains(query=query, top_k=max(3, top_k // 2))
+            self._latest_chains = chains
+            for chain in chains:
+                docs.append(
+                    (
+                        chain.chain_id,
+                        "theorem_chain",
+                        chain.summary,
+                        {
+                            "edge_ids": chain.edge_ids,
+                            "node_ids": chain.node_ids,
+                            "composability_score": chain.composability_score,
+                            "obligations": [obl.model_dump() for obl in chain.generated_obligations],
+                        },
+                    )
+                )
 
         keyword_hits = self.keyword.retrieve(query=query, docs=docs, top_k=top_k)
         if not self.embeddings.available():

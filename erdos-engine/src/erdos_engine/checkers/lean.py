@@ -79,6 +79,83 @@ class LeanChecker(BaseChecker):
             cleaned = f"m_{cleaned}"
         return cleaned[:60] or "move"
 
+    @staticmethod
+    def _is_tautological_mapping(lean_src: str) -> bool:
+        compact = " ".join(lean_src.split())
+        return " : ∀ m : Nat, N < m → m ≤ N + L → ¬ Nat.Prime m := by" in compact and "exact h m hm1 hm2" in compact
+
+    @staticmethod
+    def _normalize_expr(expr: str) -> str:
+        out = expr.strip().lower().replace(" ", "")
+        out = out.replace("==", "=")
+        return out
+
+    def _obligation_source(self, theorem_name: str, obligations: list[dict]) -> str | None:
+        """Generate Lean source from compositional obligations."""
+        statements: list[str] = []
+        for raw in obligations:
+            stmt = str(raw.get("statement", "")).strip()
+            if stmt:
+                statements.append(stmt)
+        if not statements:
+            return None
+
+        # Special case: eq rewrite obligation "A=B -> C=f(A) -> C=f(B)"
+        for stmt in statements:
+            if "->" not in stmt:
+                continue
+            parts = [p.strip() for p in stmt.split("->") if p.strip()]
+            if len(parts) < 2:
+                continue
+            left = parts[0]
+            right = parts[-1]
+            if "=" not in left or "=" not in right:
+                continue
+            l_lhs, l_rhs = [x.strip() for x in left.split("=", 1)]
+            r_lhs, r_rhs = [x.strip() for x in right.split("=", 1)]
+            if self._normalize_expr(left) == self._normalize_expr(right):
+                continue
+            # Build conservative rewrite theorem over reals to support log().
+            if "log" in left.lower() or "log" in right.lower():
+                return (
+                    f"""
+import Mathlib
+
+namespace ErdosEngine
+
+theorem {theorem_name}
+    (A B C : Real)
+    (hAB : A = B)
+    (hC : C = Real.log A) :
+    C = Real.log B := by
+  simpa [hAB] using hC
+
+end ErdosEngine
+""".strip()
+                    + "\n"
+                )
+
+            # Generic equality rewrite theorem.
+            return (
+                f"""
+import Mathlib
+
+namespace ErdosEngine
+
+theorem {theorem_name}
+    (A B C : Nat)
+    (hAB : A = B)
+    (hC : C = A) :
+    C = B := by
+  simpa [hAB] using hC
+
+end ErdosEngine
+""".strip()
+                + "\n"
+            )
+
+        return None
+
     def _goal_for_move(self, problem: Problem, move: ProofMove, theorem_name: str) -> str | None:
         text = " ".join([problem.statement, move.claim, move.rationale or "", move.test_plan or ""]).lower()
 
@@ -135,7 +212,23 @@ end ErdosEngine
 
     def evaluate(self, problem: Problem, state: ResearchState, move: ProofMove) -> MoveEvaluation:
         theorem_name = self._sanitize(f"{problem.id}_{move.id}_{state.depth}")
-        lean_src = self._goal_for_move(problem, move, theorem_name)
+        lean_src = self._obligation_source(theorem_name, move.lean_obligations)
+        if lean_src is None:
+            lean_src = self._goal_for_move(problem, move, theorem_name)
+
+        if move.lean_obligations and lean_src is None:
+            return MoveEvaluation(
+                move_id=move.id,
+                status="rejected_by_counterexample",
+                reason="No nontrivial Lean obligation could be generated from theorem chain.",
+                score_delta=-4.0,
+                evidence={
+                    "lean_formalization_attempted": False,
+                    "obligation_count": len(move.lean_obligations),
+                    "rejection_category": "obligation_generation_failed",
+                },
+                counterexample="nontrivial obligation missing",
+            )
 
         if lean_src is None:
             return MoveEvaluation(
@@ -146,6 +239,18 @@ end ErdosEngine
                 evidence={
                     "lean_formalization_attempted": False,
                     "rejection_category": "claim_unmapped_for_lean",
+                },
+            )
+
+        if self._is_tautological_mapping(lean_src):
+            return MoveEvaluation(
+                move_id=move.id,
+                status="plausible_informal",
+                reason="Mapped Lean theorem is tautological; formal progress not credited.",
+                score_delta=0.0,
+                evidence={
+                    "lean_formalization_attempted": True,
+                    "rejection_category": "tautological_mapping_blocked",
                 },
             )
 

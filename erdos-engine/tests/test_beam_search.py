@@ -60,6 +60,17 @@ class DummyLean:
         )
 
 
+class DummyLeanPlausible:
+    def evaluate(self, problem, state, move):
+        return MoveEvaluation(
+            move_id=move.id,
+            status="plausible_informal",
+            score_delta=0.0,
+            reason="mock plausible",
+            evidence={"lean_formalization_attempted": True, "lean_artifact_path": "x"},
+        )
+
+
 def test_beam_search_runs_without_crash(tmp_path: Path) -> None:
     data_dir = Path("data")
     reports_dir = tmp_path / "reports"
@@ -128,3 +139,44 @@ def test_rlm_harness_triggers_after_stall(tmp_path: Path) -> None:
     )
     events = Path(result.attempt_dir or "", "events.jsonl").read_text(encoding="utf-8").splitlines()
     assert any(json.loads(line).get("event_type") == "rlm_started" for line in events)
+
+
+def test_repeated_unverified_move_does_not_keep_inflating_score(tmp_path: Path) -> None:
+    data_dir = Path("data")
+    reports_dir = tmp_path / "reports"
+    attempts_root = tmp_path / "attempts_erdos"
+    solver = BeamSearchSolver(
+        llm=DummyLLM(),
+        retriever=HybridRetriever(lemma_store=LemmaStore(data_dir), failure_store=FailureStore(data_dir)),
+        failure_store=FailureStore(data_dir),
+        lean_checker=DummyLeanPlausible(),
+        reports_dir=reports_dir,
+        attempts_root=attempts_root,
+        config=BeamSearchConfig(max_depth=3, beam_width=1, moves_per_state=1, stall_threshold=2, use_rlm=False),
+    )
+    problem = Problem(
+        id="erdos_004",
+        title="t",
+        statement="some prime statement",
+        tags=[],
+        status="solved",
+        known_solution_path=None,
+        source_url=None,
+        difficulty_guess=None,
+        computationally_testable=True,
+        formalizable=True,
+    )
+    result = solver.solve(
+        problem,
+        run_config={"beam_width": 1, "max_depth": 3, "moves_per_state": 1, "use_rlm": False},
+        lean_preflight={"ok": True},
+    )
+    events = [json.loads(line) for line in Path(result.attempt_dir or "", "events.jsonl").read_text(encoding="utf-8").splitlines()]
+    scores = [
+        float(evt["payload"]["score"])
+        for evt in events
+        if evt.get("event_type") == "move_evaluated" and "score" in evt.get("payload", {})
+    ]
+    assert scores
+    if len(scores) >= 2:
+        assert scores[-1] <= scores[0]

@@ -6,6 +6,7 @@ from .problem import Problem
 from .result import RunArtifacts, RunResult, RunSession
 from .run_event import RunEvent
 from .state import RLMOutput, ResearchState, RetrievedItem
+from .theorem_graph import DerivationChain, DerivationEdge, LeanObligation, ProofArtifact, TheoremNode
 
 __all__ = [
     "Problem",
@@ -19,4 +20,9 @@ __all__ = [
     "RunEvent",
     "RetrievedItem",
     "RLMOutput",
+    "ProofArtifact",
+    "TheoremNode",
+    "LeanObligation",
+    "DerivationEdge",
+    "DerivationChain",
 ]

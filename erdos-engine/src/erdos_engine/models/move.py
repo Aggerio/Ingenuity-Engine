@@ -39,6 +39,8 @@ class ProofMove(BaseModel):
     required_preconditions: list[str] = Field(default_factory=list)
     how_to_falsify_fast: str = ""
     target_milestone: str | None = None
+    theorem_chain_ids: list[str] = Field(default_factory=list)
+    lean_obligations: list[dict] = Field(default_factory=list)
 
 
 class MoveEvaluation(BaseModel):

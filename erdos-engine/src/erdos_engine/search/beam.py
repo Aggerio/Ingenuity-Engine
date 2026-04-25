@@ -32,6 +32,7 @@ from erdos_engine.search.scoring import score_move_evaluation, score_state
 from erdos_engine.search.stall import is_semantically_stalled, is_stalled
 from erdos_engine.store.failure_store import FailureStore
 from erdos_engine.store.problem_store import ProblemStore
+from erdos_engine.store.theorem_graph_store import TheoremGraphStore
 
 LOG = logging.getLogger(__name__)
 
@@ -62,6 +63,7 @@ class BeamSearchSolver:
         config: BeamSearchConfig,
         critic_llm: LLMClient | None = None,
         problem_store: ProblemStore | None = None,
+        theorem_graph_store: TheoremGraphStore | None = None,
     ) -> None:
         self.llm = llm
         self.critic_llm = critic_llm or llm
@@ -80,6 +82,7 @@ class BeamSearchSolver:
         self.reports_dir = Path(reports_dir)
         self.attempts_root = Path(attempts_root)
         self.case_retriever = SolvedCaseRetriever(problem_store) if problem_store else None
+        self.theorem_graph_store = theorem_graph_store
 
     @staticmethod
     def _normalize_claim(text: str) -> str:
@@ -211,6 +214,56 @@ class BeamSearchSolver:
             )
         return lean_eval, experiments
 
+    def _update_graph_trust(self, move, evaluation: MoveEvaluation) -> None:
+        if self.theorem_graph_store is None or not move.theorem_chain_ids:
+            return
+        nodes = {n.node_id: n for n in self.theorem_graph_store.load_nodes()}
+        edges = {e.edge_id: e for e in self.theorem_graph_store.load_edges()}
+        delta = 0.15 if evaluation.status == "verified_formally" else -0.1
+        for chain_id in move.theorem_chain_ids:
+            # chain ids are retrieval artifacts; we map by edge ids in obligations.
+            for obligation in move.lean_obligations:
+                edge_id = str(obligation.get("source_edge_id", "")).strip()
+                if not edge_id or edge_id not in edges:
+                    continue
+                edge = edges[edge_id]
+                edge.trust_score = max(-1.0, min(2.0, edge.trust_score + delta))
+                edge.trust_level = "high" if edge.trust_score >= 1.0 else ("medium" if edge.trust_score >= 0.3 else "low")
+                edge.proof_status = "verified" if evaluation.status == "verified_formally" else "rejected"
+                for node_id in edge.from_node_ids + ([edge.to_node_id] if edge.to_node_id else []):
+                    if node_id not in nodes:
+                        continue
+                    node = nodes[node_id]
+                    node.trust_score = max(-1.0, min(2.0, node.trust_score + (delta / 2.0)))
+                    node.trust_level = "high" if node.trust_score >= 1.0 else (
+                        "medium" if node.trust_score >= 0.3 else "low"
+                    )
+                    if evaluation.status == "verified_formally":
+                        node.proof_status = "verified"
+                _ = chain_id  # keep chain id for future finer-grained tracking
+        self.theorem_graph_store.save_nodes(list(nodes.values()))
+        self.theorem_graph_store.save_edges(list(edges.values()))
+
+    @staticmethod
+    def _attach_theorem_chains_to_move(move, chains: list[dict]) -> None:
+        claim_low = move.claim.lower()
+        picked: list[dict] = []
+        for chain in chains:
+            summary = str(chain.get("summary", "")).lower()
+            if not summary:
+                continue
+            overlap = sum(1 for token in claim_low.split() if token and token in summary)
+            if overlap >= 2:
+                picked.append(chain)
+        if not picked:
+            picked = chains[:1]
+        move.theorem_chain_ids = [str(c.get("chain_id", "")) for c in picked if c.get("chain_id")]
+        obligations: list[dict] = []
+        for chain in picked:
+            for obligation in chain.get("obligations", []):
+                obligations.append(obligation)
+        move.lean_obligations = obligations
+
     @staticmethod
     def _broad_move_reason(problem: Problem, move) -> str | None:
         if problem.id != "erdos_004":
@@ -287,10 +340,23 @@ class BeamSearchSolver:
                             "query": query,
                             "retrieved_ids": [r.item_id for r in retrieved],
                             "failed_attempts": len(failed_attempts),
+                            "theorem_chain_ids": [
+                                r.item_id for r in retrieved if r.item_type == "theorem_chain"
+                            ],
                         },
                         depth=depth,
                         state_id=state.id,
                     )
+                    theorem_chains = [
+                        {
+                            "chain_id": r.item_id,
+                            "summary": r.text,
+                            "obligations": r.metadata.get("obligations", []),
+                            "composability_score": r.metadata.get("composability_score", 0.0),
+                        }
+                        for r in retrieved
+                        if r.item_type == "theorem_chain"
+                    ]
 
                     prompt = build_proposer_prompt(
                         problem=problem,
@@ -311,6 +377,7 @@ class BeamSearchSolver:
                         state.trace.append(f"critic: {critique}")
 
                     for move in moves:
+                        self._attach_theorem_chains_to_move(move, theorem_chains)
                         broad_reason = self._broad_move_reason(problem, move)
                         if broad_reason:
                             recorder.emit(
@@ -377,6 +444,7 @@ class BeamSearchSolver:
                         )
 
                         evaluation, experiments = self._evaluate_move(problem, state, move)
+                        self._update_graph_trust(move, evaluation)
                         disagreement = self._checker_disagreement(evaluation, experiments)
                         novelty = self._novelty_score(move.claim, state.accepted_claims)
                         novelty_history.append(novelty)
@@ -387,6 +455,9 @@ class BeamSearchSolver:
                         milestone_bonus = 2.0 if newly_achieved else 0.0
 
                         move_score = score_move_evaluation(evaluation, move)
+                        if novelty <= 0.01 and evaluation.status != "verified_formally":
+                            # Prevent score inflation from repetitive, unverified moves.
+                            move_score = min(move_score, -1.0)
                         if problem.id == "erdos_004" and not newly_achieved:
                             move_score -= 2.0
 
@@ -487,6 +558,7 @@ class BeamSearchSolver:
                             )
                             state = beam[0]
                             evaluation, experiments = self._evaluate_move(problem, state, move)
+                            self._update_graph_trust(move, evaluation)
                             new_state = state.model_copy(deep=True)
                             new_state.id = f"state_{uuid4().hex[:8]}"
                             new_state.depth = depth

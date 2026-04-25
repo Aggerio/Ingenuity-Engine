@@ -10,7 +10,7 @@ from pathlib import Path
 from erdos_engine.analysis import analyze_path_sanity, latest_attempt_dir_for_problem
 from erdos_engine.checkers.lean import LeanChecker, LeanPreflightError
 from erdos_engine.config import Settings
-from erdos_engine.ingestion import bootstrap_from_previous_info, import_erdos_problem
+from erdos_engine.ingestion import bootstrap_from_previous_info, bootstrap_theorem_graph, import_erdos_problem
 from erdos_engine.llm.mock import MockLLMClient
 from erdos_engine.llm.openai_compatible import OpenAICompatibleLLMClient
 from erdos_engine.logging_utils import configure_logging
@@ -21,6 +21,7 @@ from erdos_engine.search.beam import BeamSearchConfig, BeamSearchSolver
 from erdos_engine.store.failure_store import FailureStore
 from erdos_engine.store.lemma_store import LemmaStore
 from erdos_engine.store.problem_store import ProblemStore
+from erdos_engine.store.theorem_graph_store import TheoremGraphStore
 
 LOG = logging.getLogger(__name__)
 
@@ -121,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     problem_store = ProblemStore(data_dir)
     lemma_store = LemmaStore(data_dir)
     failure_store = FailureStore(data_dir)
+    theorem_graph_store = TheoremGraphStore(data_dir)
 
     if args.command == "init-sample-data":
         problem_store.init_sample_data(force=False)
@@ -159,7 +161,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "bootstrap-knowledge":
         result = bootstrap_from_previous_info(Path(args.source_root), lemma_store)
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        graph_result = bootstrap_theorem_graph(lemma_store, theorem_graph_store)
+        print(json.dumps({**result, "theorem_graph": graph_result}, ensure_ascii=False, indent=2))
         return 0
 
     if args.command == "sanity-check-path":
@@ -189,6 +192,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         problem = problem_store.get_problem(args.problem_id)
+        if not theorem_graph_store.load_nodes():
+            bootstrap_theorem_graph(lemma_store, theorem_graph_store)
         run_settings = settings.with_overrides(
             beam_width=args.beam_width,
             max_depth=args.max_depth,
@@ -223,7 +228,11 @@ def main(argv: list[str] | None = None) -> int:
             lean_preflight = {"status": "disabled"}
 
         llm, critic_llm = _select_llm(run_settings)
-        retriever = HybridRetriever(lemma_store=lemma_store, failure_store=failure_store)
+        retriever = HybridRetriever(
+            lemma_store=lemma_store,
+            failure_store=failure_store,
+            theorem_graph_store=theorem_graph_store,
+        )
         solver = BeamSearchSolver(
             llm=llm,
             critic_llm=critic_llm,
@@ -233,6 +242,7 @@ def main(argv: list[str] | None = None) -> int:
             reports_dir=reports_dir,
             attempts_root=attempts_root,
             problem_store=problem_store,
+            theorem_graph_store=theorem_graph_store,
             config=BeamSearchConfig(
                 beam_width=run_settings.beam_width,
                 max_depth=run_settings.max_depth,
