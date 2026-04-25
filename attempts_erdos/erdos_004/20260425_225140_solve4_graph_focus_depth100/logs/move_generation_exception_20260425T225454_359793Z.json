@@ -1,0 +1,5 @@
+{
+  "model": "deepseek/deepseek-v4-flash",
+  "error": "LLM hard timeout after 120s while reading response",
+  "prompt_preview": "You are a mathematical research assistant inside a proof-search harness.\n\nYou are NOT allowed to claim a proof is complete unless the checker verifies it.\nUse case-based reasoning: reuse proven patterns only when preconditions match.\n\nGiven:\n- problem statement\n- current subgoals\n- accepted claims\n- rejected claims\n- failed attempts\n- retrieved lemmas/proof moves\n- similar solved cases with steps and why they worked\n\nGenerate exactly 3 candidate moves.\n\nEach move MUST be JSON with:\n- move_type\n- claim\n- rationale\n- test_plan\n- dependencies\n- expected_effect\n- risk\n- matched_prior_case_ids\n- why_this_applies_here\n- required_preconditions\n- how_to_falsify_fast\n- target_milestone\n\nValid target_milestone values:\n- reduction_interval_to_gap\n- crt_covering\n- asymptotic_bridge\n- validation_or_refutation\n\nRules:\n- Be precise and falsifiable.\n- Do not repeat rejected or near-duplicate moves.\n- Explain transfer from solved cases explicitly.\n- If preconditions are uncertain, say so and add fast f"
+}
