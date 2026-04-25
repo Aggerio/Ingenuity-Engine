@@ -1,0 +1,17 @@
+{
+  "problem_id": "erdos_004",
+  "attempt_dir": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_214833_solve4_retry_high_token",
+  "events_count": 7,
+  "move_events_count": 0,
+  "eval_events_count": 2,
+  "milestone_hits": {},
+  "milestone_coverage": 0.0,
+  "red_flags": {},
+  "flag_density": 0.0,
+  "rejection_reason_categories": {
+    "negative_memory_block": 2
+  },
+  "checker_disagreement_ratio": 0.0,
+  "confidence": 0.5,
+  "on_correct_path": false
+}

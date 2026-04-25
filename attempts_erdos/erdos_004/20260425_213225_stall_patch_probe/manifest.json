@@ -1,0 +1,28 @@
+{
+  "run_id": "20260425_213225_stall_patch_probe",
+  "problem_id": "erdos_004",
+  "status": "stalled",
+  "config": {
+    "beam_width": 2,
+    "max_depth": 1,
+    "moves_per_state": 2,
+    "use_rlm": true,
+    "attempts_root": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos",
+    "run_label": "stall_patch_probe"
+  },
+  "lean_preflight": {
+    "elan": "elan 4.2.1 (3d5138e15 2026-03-18)",
+    "lake": "Lake version 5.0.0-src+3dc1a08 (Lean version 4.30.0-rc2)",
+    "lake_build": "Build completed successfully (8334 jobs).\n"
+  },
+  "artifacts": {
+    "attempt_dir": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe",
+    "manifest_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe/manifest.json",
+    "events_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe/events.jsonl",
+    "best_state_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe/best_state.json",
+    "report_md_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe/report.md",
+    "report_json_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe/report.json",
+    "lean_preflight_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe/logs/lean_preflight.json",
+    "rlm_notes_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_213225_stall_patch_probe/rlm_notes.json"
+  }
+}

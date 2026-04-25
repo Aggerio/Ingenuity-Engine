@@ -1,0 +1,23 @@
+{
+  "problem_id": "erdos_004",
+  "attempt_dir": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_215508_solve4_retry_with_fallback_logging",
+  "events_count": 15,
+  "move_events_count": 4,
+  "eval_events_count": 5,
+  "milestone_hits": {
+    "reduction_interval_to_gap": 4,
+    "asymptotic_bridge": 4,
+    "crt_covering": 2
+  },
+  "milestone_coverage": 0.75,
+  "red_flags": {},
+  "flag_density": 0.0,
+  "rejection_reason_categories": {
+    "lean_timeout": 1,
+    "lean_unmapped_or_other": 3,
+    "negative_memory_block": 1
+  },
+  "checker_disagreement_ratio": 0.8,
+  "confidence": 0.682,
+  "on_correct_path": true
+}

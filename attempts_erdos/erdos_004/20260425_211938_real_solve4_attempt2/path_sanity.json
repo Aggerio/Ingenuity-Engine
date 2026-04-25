@@ -1,0 +1,23 @@
+{
+  "problem_id": "erdos_004",
+  "attempt_dir": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260425_211938_real_solve4_attempt2",
+  "events_count": 16,
+  "move_events_count": 6,
+  "eval_events_count": 6,
+  "milestone_hits": {
+    "reduction_interval_to_gap": 4,
+    "asymptotic_bridge": 5,
+    "crt_covering": 3
+  },
+  "milestone_coverage": 0.75,
+  "red_flags": {
+    "domain_mistake": 1
+  },
+  "flag_density": 0.167,
+  "rejection_reason_categories": {
+    "lean_unmapped_or_other": 6
+  },
+  "checker_disagreement_ratio": 1.0,
+  "confidence": 0.596,
+  "on_correct_path": true
+}
