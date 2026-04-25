@@ -1,0 +1,26 @@
+{
+  "arxiv": {
+    "bytes": 13609690878,
+    "tokens": 4905230148
+  },
+  "stack_exchange": {
+    "bytes": 962813093,
+    "tokens": 306853916
+  },
+  "formal": {
+    "bytes": 141328715,
+    "tokens": 59043874
+  },
+  "wiki": {
+    "bytes": 20573531,
+    "tokens": 6561329
+  },
+  "MATH": {
+    "bytes": 2429955,
+    "tokens": 898410
+  },
+  "books": {
+    "bytes": 15776008,
+    "tokens": 5553483
+  }
+}

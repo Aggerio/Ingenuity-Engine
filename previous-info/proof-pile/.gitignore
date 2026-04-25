@@ -1,0 +1,4 @@
+*.lock
+
+# Large shards — keep locally or fetch from Hugging Face / upstream (see .gitattributes comments).
+**/proofpile_*.jsonl.gz

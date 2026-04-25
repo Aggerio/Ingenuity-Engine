@@ -1,0 +1,5 @@
+# Proof-Pile shards (*.jsonl.gz) are not stored in this repository.
+# Obtain the dataset from Hugging Face (e.g. dataset zhangir-azerbayev/proof-pile) or
+# https://github.com/zhangir-azerbayev/proof-pile — then place files under train/, dev/, test/.
+#
+# The previous broad filter=lfs rules were removed so clones and pushes do not use Git LFS for data.
