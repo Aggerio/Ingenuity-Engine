@@ -44,7 +44,8 @@ class BeamSearchConfig:
     retrieved_lemmas_per_state: int = 10
     stall_threshold: int = 2
     use_rlm: bool = True
-    use_critic: bool = True
+    use_critic: bool = False
+    use_secondary_checkers: bool = False
 
 
 class BeamSearchSolver:
@@ -193,11 +194,12 @@ class BeamSearchSolver:
     ) -> tuple[MoveEvaluation, list[dict]]:
         lean_eval = self.lean_checker.evaluate(problem, state, move)
         experiments: list[dict] = []
-        for checker in self.secondary_checkers:
-            if not checker.supports(problem, move):
-                continue
-            sub_eval = checker.evaluate(problem, state, move)
-            experiments.append({"checker": checker.name, "evaluation": sub_eval.model_dump()})
+        if self.config.use_secondary_checkers:
+            for checker in self.secondary_checkers:
+                if not checker.supports(problem, move):
+                    continue
+                sub_eval = checker.evaluate(problem, state, move)
+                experiments.append({"checker": checker.name, "evaluation": sub_eval.model_dump()})
         if lean_eval.status == "rejected_by_counterexample":
             self.failure_store.record_failure(
                 problem_id=problem.id,
@@ -208,6 +210,38 @@ class BeamSearchSolver:
                 reusable_warning="Lean rejected this formalization; check assumptions and tactic plan.",
             )
         return lean_eval, experiments
+
+    @staticmethod
+    def _broad_move_reason(problem: Problem, move) -> str | None:
+        if problem.id != "erdos_004":
+            return None
+        claim = (move.claim or "").strip()
+        rationale = (move.rationale or "").strip()
+        test_plan = (move.test_plan or "").strip()
+        lc = claim.lower()
+        tokens = claim.split()
+        generic_markers = [
+            "construct",
+            "reduce the target",
+            "prove the statement",
+            "advance milestone",
+            "standard argument",
+        ]
+        has_math_signal = any(sym in claim for sym in ["=", ">", "<", "~", "≈", "≡", "π", "mod", "log", "^", "/"])
+
+        if len(tokens) < 10:
+            return "broad_move: claim too short"
+        if not has_math_signal and any(m in lc for m in generic_markers):
+            return "broad_move: generic claim without concrete math relation"
+        if len(test_plan) < 24:
+            return "broad_move: missing concrete test plan"
+        if len((move.dependencies or [])) == 0:
+            return "broad_move: missing dependencies"
+        if problem.id == "erdos_004":
+            required_markers = ["prime", "gap", "crt", "log", "pi", "π", "mod", "interval"]
+            if not any(m in (lc + " " + rationale.lower() + " " + test_plan.lower()) for m in required_markers):
+                return "broad_move: not anchored to problem-4 domain terms"
+        return None
 
     def solve(self, problem: Problem, run_config: dict, lean_preflight: dict) -> RunResult:
         """Run beam search and return final result with persisted report."""
@@ -277,6 +311,32 @@ class BeamSearchSolver:
                         state.trace.append(f"critic: {critique}")
 
                     for move in moves:
+                        broad_reason = self._broad_move_reason(problem, move)
+                        if broad_reason:
+                            recorder.emit(
+                                "move_evaluated",
+                                {
+                                    "move": move.model_dump(),
+                                    "evaluation": {
+                                        "move_id": move.id,
+                                        "status": "rejected_by_counterexample",
+                                        "score_delta": -1.0,
+                                        "reason": broad_reason,
+                                        "evidence": {"rejection_category": "broad_move"},
+                                        "counterexample": broad_reason,
+                                    },
+                                    "score": state.score - 1.0,
+                                    "state": state.model_dump(),
+                                    "claim_fingerprint": self._claim_fingerprint(move.claim),
+                                    "rejection_reason_category": "broad_move",
+                                    "checker_disagreement_summary": {"statuses": ["blocked"], "has_disagreement": False},
+                                    "novelty": 0.0,
+                                    "milestones_hit": [],
+                                },
+                                depth=depth,
+                                state_id=state.id,
+                            )
+                            continue
                         blocked, blocked_reason = self._negative_memory_blocked(problem, move, failed_attempts)
                         if blocked:
                             recorder.emit(
