@@ -1,0 +1,146 @@
+{
+  "run_id": "20260425_220434_solve4_lean600_no_secondary",
+  "problem": {
+    "id": "erdos_004",
+    "title": "Erdos Problem #4",
+    "statement": "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]",
+    "tags": [
+      "number theory",
+      "primes"
+    ],
+    "status": "solved",
+    "known_solution_path": "known_solution.md",
+    "source_url": "https://www.erdosproblems.com/4",
+    "difficulty_guess": "unknown",
+    "computationally_testable": true,
+    "formalizable": true
+  },
+  "config": {
+    "beam_width": 2,
+    "max_depth": 2,
+    "moves_per_state": 2,
+    "use_rlm": true,
+    "attempts_root": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos",
+    "run_label": "solve4_lean600_no_secondary"
+  },
+  "final_status": "plausible_progress",
+  "best_state": {
+    "id": "state_5257b3ee",
+    "problem_id": "erdos_004",
+    "depth": 2,
+    "subgoals": [
+      "Milestone 1: reduction from prime-free interval to p_{n+1}-p_n bound",
+      "Milestone 2: valid CRT covering lemma with pairwise-coprime structure",
+      "Milestone 3: parameter-growth lemma linking N, Q, and n",
+      "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]"
+    ],
+    "assumptions": [
+      "milestone:reduction_gap_to_pn",
+      "milestone:crt_covering",
+      "milestone:parameter_growth"
+    ],
+    "accepted_claims": [
+      "Construct a CRT covering lemma with pairwise-coprime moduli to force compositeness of a full interval block."
+    ],
+    "rejected_claims": [],
+    "retrieved_lemmas": [
+      "move_naturalproofs_proofwiki_3c3f3d0678f2010e",
+      "move_naturalproofs_proofwiki_d867926b12c525ee",
+      "move_naturalproofs_proofwiki_8266f95922e3187f",
+      "move_naturalproofs_proofwiki_275cbbeddf573027",
+      "move_naturalproofs_stacks_00f7363c0404d8d0",
+      "move_naturalproofs_stacks_85a32b6d63afd433",
+      "move_naturalproofs_proofwiki_4ede43d84a4dc78d",
+      "move_naturalproofs_proofwiki_0737e03de416112a",
+      "move_naturalproofs_proofwiki_4827cb53391ced33",
+      "move_naturalproofs_proofwiki_5385942d7dbac38d"
+    ],
+    "moves": [
+      {
+        "id": "move_fallback_1",
+        "move_type": "auxiliary_lemma",
+        "claim": "Construct a CRT covering lemma with pairwise-coprime moduli to force compositeness of a full interval block.",
+        "rationale": "A valid covering congruence is the core construction step before asymptotic tuning.",
+        "test_plan": "Validate pairwise coprimality and non-collision constraints in a finite checker.",
+        "dependencies": [
+          "Chinese remainder theorem",
+          "Covering congruences"
+        ],
+        "expected_effect": "Advances CRT milestone.",
+        "risk": "medium",
+        "source": "llm",
+        "matched_prior_case_ids": [],
+        "why_this_applies_here": "",
+        "required_preconditions": [],
+        "how_to_falsify_fast": "",
+        "target_milestone": "crt_covering"
+      },
+      {
+        "id": "move_fallback_1",
+        "move_type": "auxiliary_lemma",
+        "claim": "Construct a CRT covering lemma with pairwise-coprime moduli to force compositeness of a full interval block.",
+        "rationale": "A valid covering congruence is the core construction step before asymptotic tuning.",
+        "test_plan": "Validate pairwise coprimality and non-collision constraints in a finite checker.",
+        "dependencies": [
+          "Chinese remainder theorem",
+          "Covering congruences"
+        ],
+        "expected_effect": "Advances CRT milestone.",
+        "risk": "medium",
+        "source": "llm",
+        "matched_prior_case_ids": [],
+        "why_this_applies_here": "",
+        "required_preconditions": [],
+        "how_to_falsify_fast": "",
+        "target_milestone": "crt_covering"
+      }
+    ],
+    "evaluations": [
+      {
+        "move_id": "move_fallback_1",
+        "status": "verified_formally",
+        "score_delta": 6.0,
+        "reason": "Lean accepted concrete mapped theorem statement.",
+        "evidence": {
+          "lean_formalization_attempted": true,
+          "lean_artifact_path": "/home/aggerio/temp/Ingenuity_Engine/erdos-engine/lean_workspace/ErdosEngine/Gen_erdos_004_state_13b20f70_move_fallback_1.lean",
+          "stdout": "",
+          "stderr": "",
+          "returncode": 0,
+          "rejection_category": "lean_unmapped_or_other"
+        },
+        "counterexample": null
+      },
+      {
+        "move_id": "move_fallback_1",
+        "status": "verified_formally",
+        "score_delta": 6.0,
+        "reason": "Lean accepted concrete mapped theorem statement.",
+        "evidence": {
+          "lean_formalization_attempted": true,
+          "lean_artifact_path": "/home/aggerio/temp/Ingenuity_Engine/erdos-engine/lean_workspace/ErdosEngine/Gen_erdos_004_state_47563f5c_move_fallback_1.lean",
+          "stdout": "",
+          "stderr": "",
+          "returncode": 0,
+          "rejection_category": "lean_unmapped_or_other"
+        },
+        "counterexample": null
+      }
+    ],
+    "experiments": [],
+    "score": 32.7,
+    "trace": [
+      "initialized state",
+      "depth=1 move=move_fallback_1 status=verified_formally novelty=0.20 milestones=['reduction_gap_to_pn', 'crt_covering', 'parameter_growth'] score=18.70",
+      "depth=2 move=move_fallback_1 status=verified_formally novelty=0.00 milestones=['reduction_gap_to_pn', 'crt_covering', 'parameter_growth'] score=32.70"
+    ],
+    "stalled_steps": 0
+  },
+  "rlm_notes": {},
+  "lean_preflight": {
+    "elan": "elan 4.2.1 (3d5138e15 2026-03-18)",
+    "lake": "Lake version 5.0.0-src+3dc1a08 (Lean version 4.30.0-rc2)",
+    "lake_build": "Build completed successfully (8334 jobs).\n"
+  },
+  "generated_at": "2026-04-25T22:06:16.052402+00:00"
+}
