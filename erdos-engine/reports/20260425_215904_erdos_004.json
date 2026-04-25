@@ -1,0 +1,209 @@
+{
+  "problem": {
+    "id": "erdos_004",
+    "title": "Erdos Problem #4",
+    "statement": "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]",
+    "tags": [
+      "number theory",
+      "primes"
+    ],
+    "status": "solved",
+    "known_solution_path": "known_solution.md",
+    "source_url": "https://www.erdosproblems.com/4",
+    "difficulty_guess": "unknown",
+    "computationally_testable": true,
+    "formalizable": true
+  },
+  "config": {
+    "beam_width": 2,
+    "max_depth": 2,
+    "moves_per_state": 2,
+    "use_rlm": true,
+    "attempts_root": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos",
+    "run_label": "solve4_retry_with_fallback_logging"
+  },
+  "final_status": "plausible_progress",
+  "best_state": {
+    "id": "state_17487bea",
+    "problem_id": "erdos_004",
+    "depth": 2,
+    "subgoals": [
+      "Milestone 1: reduction from prime-free interval to p_{n+1}-p_n bound",
+      "Milestone 2: valid CRT covering lemma with pairwise-coprime structure",
+      "Milestone 3: parameter-growth lemma linking N, Q, and n",
+      "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]"
+    ],
+    "assumptions": [
+      "milestone:reduction_gap_to_pn",
+      "milestone:crt_covering",
+      "milestone:parameter_growth"
+    ],
+    "accepted_claims": [
+      "Construct a CRT covering lemma with pairwise-coprime moduli to force compositeness of a full interval block.",
+      "Reduce the target inequality to constructing infinitely many intervals (N, N+L] with L = C * log N * log log N * log log log log N / (log log log N)^2, where every integer in the interval is composite, and then set n = π(N) to obtain p_{n+1} - p_n > L."
+    ],
+    "rejected_claims": [],
+    "retrieved_lemmas": [
+      "move_naturalproofs_proofwiki_3c3f3d0678f2010e",
+      "move_naturalproofs_proofwiki_d867926b12c525ee",
+      "move_naturalproofs_proofwiki_8266f95922e3187f",
+      "move_naturalproofs_proofwiki_275cbbeddf573027",
+      "move_naturalproofs_stacks_00f7363c0404d8d0",
+      "move_naturalproofs_stacks_85a32b6d63afd433",
+      "move_naturalproofs_proofwiki_4ede43d84a4dc78d",
+      "move_naturalproofs_proofwiki_0737e03de416112a",
+      "move_naturalproofs_proofwiki_4827cb53391ced33",
+      "move_naturalproofs_proofwiki_5385942d7dbac38d"
+    ],
+    "moves": [
+      {
+        "id": "move_fallback_1",
+        "move_type": "auxiliary_lemma",
+        "claim": "Construct a CRT covering lemma with pairwise-coprime moduli to force compositeness of a full interval block.",
+        "rationale": "A valid covering congruence is the core construction step before asymptotic tuning.",
+        "test_plan": "Validate pairwise coprimality and non-collision constraints in a finite checker.",
+        "dependencies": [
+          "Chinese remainder theorem",
+          "Covering congruences"
+        ],
+        "expected_effect": "Advances CRT milestone.",
+        "risk": "medium",
+        "source": "llm",
+        "matched_prior_case_ids": [],
+        "why_this_applies_here": "",
+        "required_preconditions": [],
+        "how_to_falsify_fast": "",
+        "target_milestone": "crt_covering"
+      },
+      {
+        "id": "move_llm_0",
+        "move_type": "reduction",
+        "claim": "Reduce the target inequality to constructing infinitely many intervals (N, N+L] with L = C * log N * log log N * log log log log N / (log log log N)^2, where every integer in the interval is composite, and then set n = π(N) to obtain p_{n+1} - p_n > L.",
+        "rationale": "This is the standard reduction in Erdős–Rankin type arguments: a prime-free interval of length L starting after N implies a gap between consecutive primes at least L, and the index n is the prime-counting function at N. The iterated-log form matches the problem statement after substituting n ~ N/log N via PNT.",
+        "test_plan": "1. Formalize the inequality: For N large, show that if (N, N+L] contains no primes, then p_{π(N)+1} - p_{π(N)} > L. 2. Use PNT to bound π(N) ~ N/log N and verify that L expressed in terms of N transforms to the required form in n. 3. Check that the constant C remains unchanged up to a factor (1+o(1)).",
+        "dependencies": [
+          "Prime Number Theorem",
+          "Definition of prime gaps",
+          "Asymptotic inversion of π(x)"
+        ],
+        "expected_effect": "Advances Milestone 1 (reduction_interval_to_gap) by linking the problem to constructing prime-free intervals.",
+        "risk": "low",
+        "source": "llm",
+        "matched_prior_case_ids": [
+          "sample_solved_001"
+        ],
+        "why_this_applies_here": "The solved case 'Infinitely many primes' uses a constructive argument to produce numbers with no small prime factors; here we need a constructive covering to force compositeness over an interval, which is a generalization of that idea.",
+        "required_preconditions": [
+          "PNT holds",
+          "π(N) is monotonic and tends to infinity"
+        ],
+        "how_to_falsify_fast": "Test with a concrete large N (e.g., N=10^100) and a candidate L; if a prime is found in (N, N+L] via a quick heuristic check, the reduction fails for that N, but the claim only requires infinitely many N, so a single counterexample is not fatal—need to show no such N exists.",
+        "target_milestone": "reduction_interval_to_gap"
+      }
+    ],
+    "evaluations": [
+      {
+        "move_id": "move_fallback_1",
+        "status": "verified_formally",
+        "score_delta": 6.0,
+        "reason": "Lean accepted concrete mapped theorem statement.",
+        "evidence": {
+          "lean_formalization_attempted": true,
+          "lean_artifact_path": "/home/aggerio/temp/Ingenuity_Engine/erdos-engine/lean_workspace/ErdosEngine/Gen_erdos_004_state_474a1d42_move_fallback_1.lean",
+          "stdout": "",
+          "stderr": "",
+          "returncode": 0,
+          "rejection_category": "lean_unmapped_or_other"
+        },
+        "counterexample": null
+      },
+      {
+        "move_id": "move_llm_0",
+        "status": "verified_formally",
+        "score_delta": 6.0,
+        "reason": "Lean accepted concrete mapped theorem statement.",
+        "evidence": {
+          "lean_formalization_attempted": true,
+          "lean_artifact_path": "/home/aggerio/temp/Ingenuity_Engine/erdos-engine/lean_workspace/ErdosEngine/Gen_erdos_004_state_8f27a6e4_move_llm_0.lean",
+          "stdout": "",
+          "stderr": "",
+          "returncode": 0,
+          "rejection_category": "lean_unmapped_or_other"
+        },
+        "counterexample": null
+      }
+    ],
+    "experiments": [
+      {
+        "checker": "number_theory",
+        "evaluation": {
+          "move_id": "move_fallback_1",
+          "status": "accepted_computationally",
+          "score_delta": 1.0,
+          "reason": "Construction survives finite residue sanity check.",
+          "evidence": {
+            "N": 211,
+            "residues": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "counterexample": null
+        }
+      },
+      {
+        "checker": "brute_force",
+        "evaluation": {
+          "move_id": "move_fallback_1",
+          "status": "unsupported",
+          "score_delta": -0.5,
+          "reason": "No safe canned brute-force template matched test_plan.",
+          "evidence": {
+            "plan": "Validate pairwise coprimality and non-collision constraints in a finite checker."
+          },
+          "counterexample": null
+        }
+      },
+      {
+        "checker": "number_theory",
+        "evaluation": {
+          "move_id": "move_llm_0",
+          "status": "unsupported",
+          "score_delta": -0.5,
+          "reason": "Number theory checker found no bounded test.",
+          "evidence": {},
+          "counterexample": null
+        }
+      },
+      {
+        "checker": "algebra",
+        "evaluation": {
+          "move_id": "move_llm_0",
+          "status": "unsupported",
+          "score_delta": -0.5,
+          "reason": "Symbolic parse failed: Sympify of expression 'could not parse 'Reduce the target inequality to constructing infinitely many intervals (N, N+L] with L'' failed, because of exception being raised:\nSyntaxError: closing parenthesis ']' does not match opening parenthesis '(' (<string>, line 1)",
+          "evidence": {},
+          "counterexample": null
+        }
+      }
+    ],
+    "score": 32.900000000000006,
+    "trace": [
+      "initialized state",
+      "critic: {'critique': {'move_fallback_0': {'vague_claims': 'The transfer from prime-free intervals to $p_{n+1}-p_n$ via $n = \\\\pi(N)$ is underspecified; the Prime Number Theorem provides an average gap, but the local density of primes near $N$ is not uniform, making the mapping $n \\\\approx N/\\\\log N$ potentially loose for the specific growth rate requested.', 'missing_assumptions': 'Assumes that the density of primes in the vicinity of $N$ is sufficiently stable to allow the substitution $n = \\\\pi(N)$ without losing the $C$ constant factor.', 'validity_of_transfer': 'Questionable. The standard Erdős-Rankin construction relies on $L$ being a function of $N$. Mapping this to $n$ requires precise control over the error term in the Prime Number Theorem, which is not addressed.', 'testability': 'Fast. Can be verified by checking if the substitution $n = \\\\pi(N)$ preserves the asymptotic order of the requested expression.', 'causality_vs_handwavy': 'Handwavy. It assumes the mapping is a direct substitution without accounting for the variance in prime distribution.'}, 'move_fallback_1': {'vague_claims': \"The claim mentions 'pairwise-coprime moduli' for a covering system, but standard covering systems (like those used by Erdős) often rely on moduli that are *not* pairwise coprime (e.g., the Erdős-Selfridge covering systems).\", 'missing_assumptions': \"Fails to specify if the covering system is a 'covering system' in the sense of Erdős (where moduli are not necessarily coprime) or a 'sieve' (where they are). If the moduli must be pairwise coprime, the construction is significantly more constrained.\", 'possible_counterexamples': 'If the moduli are strictly pairwise coprime, the density of the covered integers is governed by the Chinese Remainder Theorem, which may not be sufficient to cover an interval of length $L$ with the required density.', 'testability': 'Fast. Can be checked by verifying if the proposed moduli satisfy the covering property for the interval $L$.', 'causality_vs_handwavy': \"Handwavy. It asserts that a covering lemma is the 'core construction step' without defining the density requirements for the specific $L$ provided.\"}}, 'status': 'The proposed moves are mathematically underspecified. The reduction in move_fallback_0 ignores the local fluctuations of $\\\\pi(N)$, and move_fallback_1 conflates covering systems with coprime sieves, which have different density properties.'}",
+      "depth=1 move=move_fallback_1 status=verified_formally novelty=0.20 milestones=['reduction_gap_to_pn', 'crt_covering', 'parameter_growth'] score=18.70",
+      "critic: {'vague_claims': [\"The claim that 'the constant C remains unchanged up to a factor (1+o(1))' is vague; it ignores the sensitivity of the iterated log terms to the shift between N and π(N) = n.\"], 'likely_false_claims': [\"The claim that the problem is a 'generalization' of the 'Infinitely many primes' proof is misleading; the latter is an existence proof, whereas this requires a specific, non-trivial lower bound on the growth of gaps, which is a significantly harder quantitative problem.\"], 'missing_assumptions': ['The move assumes that the prime-free interval can be constructed starting at an arbitrary N, but the CRT covering lemma requires N to be a multiple of the product of the primes used in the covering (the primorial), which imposes a rigid structure on N that is not addressed.'], 'possible_counterexamples': ['If the density of primes in the vicinity of N is higher than the average predicted by PNT, the interval (N, N+L] might contain a prime even if the CRT covering is optimized, potentially invalidating the gap bound for specific N.'], 'transfer_validity': [\"The transfer from 'sample_solved_001' (likely a basic prime gap existence proof) is weak. Standard existence proofs for gaps do not typically handle the specific iterated-log complexity required for the Rankin-style bounds.\"], 'preconditions_satisfied': [\"The precondition 'PNT holds' is satisfied, but the precondition 'π(N) is monotonic' is trivial and insufficient to guarantee the mapping between the interval length L and the gap size p_{n+1}-p_n without accounting for the distribution of primes.\"], 'causal_vs_handwavy': [\"The rationale 'This is the standard reduction' is handwavy. It assumes the existence of a construction that satisfies the CRT covering requirements without proving that such a construction can yield the specific L requested.\"], 'testability': [\"The reduction is testable in principle, but the 'how_to_falsify_fast' plan is flawed: checking a single N is insufficient to disprove the existence of infinitely many such N, and the construction of the covering set for a given L is computationally expensive (NP-hard in some formulations).\"]}",
+      "depth=2 move=move_llm_0 status=verified_formally novelty=0.20 milestones=['reduction_gap_to_pn', 'parameter_growth'] score=32.90"
+    ],
+    "stalled_steps": 0
+  },
+  "rlm_notes": {},
+  "lean_preflight": {
+    "elan": "elan 4.2.1 (3d5138e15 2026-03-18)",
+    "lake": "Lake version 5.0.0-src+3dc1a08 (Lean version 4.30.0-rc2)",
+    "lake_build": "Build completed successfully (8334 jobs).\n"
+  },
+  "generated_at": "2026-04-25T21:59:04.619462+00:00"
+}
