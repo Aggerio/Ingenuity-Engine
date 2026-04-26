@@ -1,138 +1,133 @@
-# Ingenuity Engine
+# Ingenuity Engine: A Paused/Failed Attempt at LLM-Driven Math Research
 
-Ingenuity Engine is an experimental research system for attacking mathematical problems with a combination of language models, retrieval, symbolic checking, search, and formal verification.
+I am open-sourcing this repository as a postmortem.
 
-The long-term goal is simple:
+I started Ingenuity Engine to test a specific bet: if I combined LLM creativity with strict verification and persistent memory, I could build a system that makes real progress on hard Erdős-style math problems.
 
-> Build a machine that can study solved mathematical problems, learn useful proof moves, retrieve relevant lemmas, explore possible solution paths, and eventually help discover new proofs for difficult open problems.
+I built a lot. I learned a lot. I did not achieve the core goal.
 
-The first target domain is Erdős-style mathematics: problems in number theory, combinatorics, graph theory, extremal structures, and related areas where clever reductions, known lemmas, and creative constructions often matter more than brute-force computation.
+This project is paused and I consider it a failed attempt at the original objective.
 
-## Why This Exists
+## How This Started
 
-Modern language models can produce impressive mathematical reasoning, but they are unreliable when used alone. They hallucinate lemmas, skip hard steps, and often produce proofs that sound correct but fail under close inspection.
+My initial assumptions were:
 
-Ingenuity Engine is built around a different idea:
+1. LLMs are creative but unreliable for rigorous math.
+2. Formal tools (Lean) are reliable but difficult to use directly at scale.
+3. A good orchestrator might combine both: LLM for ideas, formal checks for truth.
 
-> Do not trust the model blindly. Use the model as a generator of ideas, and surround it with tools that can search, check, reject, refine, and remember.
-
-Instead of asking an LLM to solve a hard problem in one shot, the system treats proof discovery as an iterative process:
-
-1. Read the problem.
-2. Retrieve similar solved problems.
-3. Retrieve useful lemmas and proof moves.
-4. Generate possible attack strategies.
-5. Test small cases or counterexamples.
-6. Try symbolic or formal verification where possible.
-7. Record failures.
-8. Reuse what was learned in future attempts.
-
-The goal is not just to generate answers, but to create a feedback loop that becomes better at mathematical exploration over time.
-
-## Core Idea
-
-Ingenuity Engine is inspired by systems like AlphaGeometry, theorem provers, retrieval-augmented generation, and reinforcement-style search.
-
-The system combines several components:
-
-- **Problem database**: stores mathematical problems, statements, known solutions, metadata, and hidden notes for evaluation.
-- **Lemma database**: stores reusable mathematical facts, proof moves, failed attempts, and useful patterns.
-- **Retrieval system**: finds related problems, lemmas, and strategies before attempting a solution.
-- **Search system**: explores multiple proof paths instead of relying on a single answer.
-- **Checkers**: test generated claims using brute force, algebraic checks, graph checks, number-theoretic checks, SMT/Z3-style checks, and Lean where possible.
-- **LLM layer**: uses language models to propose reductions, proof plans, constructions, and candidate lemmas.
-- **RLM loop**: records what worked, what failed, and what should be tried next.
-
-The system is designed to behave less like a chatbot and more like a mathematical research assistant with memory, tools, and self-correction.
-
-## What We Are Trying To Build
-
-The aim is to create a proof-search engine that can take a difficult mathematical problem and repeatedly attempt to make progress on it.
-
-At first, the system will work on solved problems. This lets us test whether it can rediscover known solutions without seeing them directly.
-
-Once the harness becomes reliable on solved examples, the same process can be applied to harder unsolved or partially solved problems.
-
-The development path is:
-
-1. Start with solved Erdős-style problems.
-2. Hide the known solution from the model.
-3. Let the system retrieve related knowledge.
-4. Generate proof attempts.
-5. Check the attempts using external tools.
-6. Compare against the known solution.
-7. Store useful discoveries and failure modes.
-8. Improve the search loop.
-9. Move toward harder open problems.
-
-This is not expected to solve famous open problems immediately. The point is to build the machinery needed for serious automated mathematical experimentation.
-
-## Philosophy
-
-Ingenuity Engine is based on a few guiding principles.
-
-### 1. Retrieval before generation
-
-A model should not reason in isolation. It should first search for nearby solved problems, known lemmas, standard constructions, and previous failed attempts.
-
-### 2. Many weak attempts beat one confident answer
-
-A single proof attempt from an LLM is usually fragile. The system should generate many possible routes, rank them, test them, and keep only what survives.
-
-### 3. Failed attempts are valuable data
-
-Failures should not be thrown away. A failed proof can teach the system which lemmas were insufficient, which reductions were invalid, and which counterexamples block a path.
-
-### 4. Verification matters
-
-Mathematics needs checking. Whenever possible, claims should be tested through brute force, symbolic tools, formal systems, or proof assistants.
-
-### 5. Creativity can be searched
-
-Mathematical creativity often comes from adding the right object, changing the representation, finding the right analogy, or importing a lemma from a nearby field. The system should search over these creative moves instead of waiting for them to appear magically.
-
-## Current Scope
-
-The current version focuses on building the core engine for:
-
-- representing mathematical problems,
-- storing lemmas and proof moves,
-- retrieving relevant knowledge,
-- generating structured proof attempts,
-- running basic checkers,
-- recording failures,
-- and producing readable reports.
-
-The system is still experimental. It is not a finished theorem prover, and it should not be trusted as a source of verified mathematics unless an external checker or formal proof confirms the result.
-
-## Target Use Cases
-
-Ingenuity Engine is meant for experiments such as:
-
-- rediscovering solutions to known Erdős problems,
-- comparing different proof-search strategies,
-- testing whether retrieval improves mathematical reasoning,
-- building a reusable database of proof moves,
-- generating candidate lemmas,
-- finding counterexamples to weak claims,
-- formalizing small parts of informal proofs,
-- and studying how LLMs can be combined with symbolic tools.
-
-## Long-Term Vision
-
-The long-term vision is to build a system that can participate in mathematical discovery.
-
-Not by replacing mathematicians, but by acting as a tireless research engine:
-
-- searching known literature,
-- trying many approaches,
-- checking edge cases,
-- finding analogies,
-- proposing lemmas,
-- building proof sketches,
-- and remembering every useful failure.
-
-In the ideal version, the system becomes a loop:
+So I built around a loop, not a one-shot answer:
 
 ```text
-problem → retrieval → proof attempt → checking → failure/success → memory → better attempt
+problem -> retrieve context -> generate candidate moves -> verify/reject -> store failures -> retry
+```
+
+I targeted hard number-theoretic search around Erdős-style statements, with `erdos_004` as the main stress test.
+
+## What I Actually Built
+
+Most implementation lives in `erdos-engine/`:
+
+- A local CLI harness (`run`, `report`, `list-problems`, `sanity-check-path`, and bootstrap commands).
+- Beam search over research states (not just one-shot generations).
+- Retrieval from a lemma store, theorem graph, and persistent failure memory.
+- A Lean-first checking path with preflight and formalization attempts.
+- Optional critic model pass and optional secondary heuristic checkers.
+- An RLM-style fallback mode intended to recover from stall states.
+- Persistent artifacts for every run in `attempts_erdos/...` plus reports in `erdos-engine/reports/...`.
+
+In plain terms: this was not just a concept note. I built and ran a full experiment harness.
+
+## Models and Providers I Used
+
+Runs in this repo used OpenRouter-compatible endpoints with combinations such as:
+
+- `x-ai/grok-4.1-fast` (proposer in scripted runs),
+- `google/gemini-3.1-flash-lite-preview` (critic/confirmation in scripted runs),
+- `openai/gpt-oss-20b:free` (default proposer in config),
+- `google/gemini-2.5-flash-lite` (default critic in config).
+
+The key point: this was not one model failing. The orchestration as a whole failed to produce reliable formal progress on the target problem.
+
+## Timeline: What I Tried, In Order
+
+### Phase 1: Build the spine
+
+I first built storage, retrieval, run orchestration, and reporting so I could iterate quickly without losing history. This phase mostly worked.
+
+### Phase 2: Make checking first-class
+
+I wired Lean preflight and Lean-first evaluation into the core loop, then added secondary checks behind it. This improved honesty: fewer fake wins, more explicit failures.
+
+### Phase 3: Add search and recovery
+
+I layered beam search, stricter move parsing, critic paths, and RLM fallback to avoid getting trapped in one bad generation stream.
+
+### Phase 4: Run many attempts on `erdos_004`
+
+I ran repeated experiments (see the timestamped attempt directories under `attempts_erdos/erdos_004/` and reports under `erdos-engine/reports/`).
+
+This is where the project broke:
+
+- many runs completed cleanly from an infrastructure perspective,
+- but accepted formal progress stayed near zero,
+- and final run status repeatedly ended as `stalled`.
+
+At that point, I had to call the project what it was: a good research harness that failed at its primary math objective.
+
+## What Worked
+
+- **End-to-end execution worked.** Retrieval, generation, evaluation, and report writing ran repeatedly.
+- **Lean setup was operationally reliable.** Toolchain preflight/build checks were consistently successful in recorded runs.
+- **Observability was strong.** I captured logs, events, best-state snapshots, and markdown/json reports suitable for deep failure analysis.
+- **Iteration got fast.** I could change prompts/policies/parsers and re-run quickly.
+
+These are engineering wins, not theorem-proving wins.
+
+## Where It Failed
+
+- **Primary objective failed:** I did not get a verified solution path for the hard target problem.
+- **Progress repeatedly collapsed:** runs ended `stalled` with empty accepted-claim sets and little effective depth gain.
+- **Recovery logic underperformed:** fallback/reflection often produced activity, not durable formal progress.
+- **Language-to-formal bridge was the bottleneck:** plausible text still failed to become Lean-usable steps.
+
+Bottom line: I generated lots of attempts and artifacts, but not mathematically meaningful formal advancement on the target.
+
+## Assumptions: What I Got Right vs Wrong
+
+### What I got right
+
+- **"Never trust raw model output."** Mandatory structure and checking prevented self-deception.
+- **Failure memory matters.** Persistent traces made iteration scientific instead of anecdotal.
+- **Lean-first was the right guardrail.** Without it, I would likely have mistaken fluent text for real progress.
+
+### What I got wrong
+
+- **I overestimated orchestration.** Retrieval + beam search + critic loops did not automatically produce deep mathematical insight.
+- **I overestimated compounding from raw iteration.** More attempts often meant more repetition, not better ideas.
+- **I underestimated formalization cost.** Translating informal strategy into formalizable steps was harder than almost everything else.
+- **I started too hard, too soon.** The system needed a much stronger solved-problem curriculum before serious open-problem-style targets.
+
+## Brutal Bottom Line
+
+I put real effort into building this stack, and it still failed its central claim.
+
+That failure is exactly why this repo is public: it is a concrete, inspectable record of where this style of LLM-plus-orchestration currently breaks on hard, formalizable mathematics.
+
+## What This Repo Is Useful For Now
+
+- Studying an LLM + retrieval + checker architecture in one place.
+- Mining failure traces for better future search policies.
+- Benchmarking "looks-smart" outputs against formal verification pressure.
+- Understanding practical bottlenecks in moving from language reasoning to proof-grade steps.
+
+## Current Status
+
+Paused. Archived. Open-sourced for transparency.
+
+If I resume this line of work, I should restart with:
+
+- tighter solved-problem curricula,
+- narrower formal subgoals per step,
+- stronger lemma grounding before generation,
+- and stricter acceptance criteria for what counts as progress.
