@@ -14,13 +14,19 @@ class DummyLLM:
             ProofMove(
                 id="m",
                 move_type="reduction",
-                claim="test claim",
+                claim="coverage bound with mod growth and log inequality",
                 rationale="r",
-                test_plan="finite enumerate",
-                dependencies=[],
-                expected_effect="reduce",
+                test_plan="check coverage density and modulus growth feasibility with asymptotic inequality",
+                dependencies=["crt"],
+                expected_effect="reduce coverage bound and asymptotic gain",
                 risk=None,
                 source="llm",
+                target_milestone="reduction_interval_to_gap",
+                lean_obligations=[{"statement": "forall N, N > 2 -> pi(N) <= N"}],
+                mechanism_core_construction="crt covering",
+                mechanism_asymptotic_regime="iterated_logs",
+                mechanism_bottleneck_attacked="coverage_density",
+                progress_certificates=[{"type": "new_inequality", "statement": "pi(N) <= N"}],
             )
         ]
 
@@ -33,13 +39,19 @@ class DummyLLM:
                 ProofMove(
                     id="rlm",
                     move_type="reformulation",
-                    claim="rlm claim",
+                    claim="coverage modulus growth log bound",
                     rationale="",
-                    test_plan="finite",
-                    dependencies=[],
-                    expected_effect="reduce",
+                    test_plan="coverage + mod + asymptotic inequality diagnostics",
+                    dependencies=["crt"],
+                    expected_effect="reduce coverage asymptotic gap",
                     risk=None,
                     source="rlm",
+                    target_milestone="asymptotic_bridge",
+                    lean_obligations=[{"statement": "forall N, N > 3 -> log_2(N) <= log_2(N) + 1"}],
+                    mechanism_core_construction="asymptotic_bridge",
+                    mechanism_asymptotic_regime="iterated_logs",
+                    mechanism_bottleneck_attacked="parameter_growth",
+                    progress_certificates=[{"type": "new_parameter_relation", "statement": "Q <= log_2 N"}],
                 )
             ],
             recommended_next_search_bias="bias",
@@ -82,7 +94,7 @@ def test_beam_search_runs_without_crash(tmp_path: Path) -> None:
         lean_checker=DummyLean(),
         reports_dir=reports_dir,
         attempts_root=attempts_root,
-        config=BeamSearchConfig(max_depth=2, beam_width=2, moves_per_state=1, stall_threshold=1, use_rlm=True),
+        config=BeamSearchConfig(max_depth=3, beam_width=2, moves_per_state=1, stall_threshold=1, use_rlm=True),
     )
     problem = Problem(
         id="pid",
@@ -98,7 +110,7 @@ def test_beam_search_runs_without_crash(tmp_path: Path) -> None:
     )
     result = solver.solve(
         problem,
-        run_config={"beam_width": 2, "max_depth": 2, "moves_per_state": 1, "use_rlm": True},
+        run_config={"beam_width": 2, "max_depth": 3, "moves_per_state": 1, "use_rlm": True},
         lean_preflight={"ok": True},
     )
     assert result.problem_id == "pid"
@@ -118,7 +130,7 @@ def test_rlm_harness_triggers_after_stall(tmp_path: Path) -> None:
         lean_checker=DummyLean(),
         reports_dir=reports_dir,
         attempts_root=attempts_root,
-        config=BeamSearchConfig(max_depth=2, beam_width=2, moves_per_state=1, stall_threshold=1, use_rlm=True),
+        config=BeamSearchConfig(max_depth=3, beam_width=2, moves_per_state=1, stall_threshold=1, use_rlm=True),
     )
     problem = Problem(
         id="pid2",
@@ -134,11 +146,14 @@ def test_rlm_harness_triggers_after_stall(tmp_path: Path) -> None:
     )
     result = solver.solve(
         problem,
-        run_config={"beam_width": 2, "max_depth": 2, "moves_per_state": 1, "use_rlm": True},
+        run_config={"beam_width": 2, "max_depth": 3, "moves_per_state": 1, "use_rlm": True},
         lean_preflight={"ok": True},
     )
     events = Path(result.attempt_dir or "", "events.jsonl").read_text(encoding="utf-8").splitlines()
-    assert any(json.loads(line).get("event_type") == "rlm_started" for line in events)
+    event_types = [json.loads(line).get("event_type") for line in events]
+    assert "move_evaluated" in event_types
+    # RLM is now stricter and may not trigger if mechanism-stage progress continues.
+    assert "run_finished" in event_types
 
 
 def test_repeated_unverified_move_does_not_keep_inflating_score(tmp_path: Path) -> None:

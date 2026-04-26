@@ -33,6 +33,8 @@ class HybridRetriever:
         return list(self._latest_chains)
 
     def retrieve(self, query: str, tags: list[str], top_k: int, problem_id: str) -> list[RetrievedItem]:
+        domain_first_tags = {t.lower() for t in tags}
+        is_prime_gap = any(t in {"prime-gaps", "prime_gap", "prime", "sieve", "coverings", "pnt"} for t in domain_first_tags)
         docs: list[tuple[str, str, str, dict]] = []
         for lemma in self.lemma_store.load_lemmas():
             if tags and not set(tags).intersection(set(lemma.domain_tags)):
@@ -46,6 +48,10 @@ class HybridRetriever:
                 )
             )
         for move in self.lemma_store.load_proof_moves():
+            if is_prime_gap:
+                searchable = " ".join([move.claim, move.rationale, move.expected_effect]).lower()
+                if not any(token in searchable for token in ["prime", "gap", "sieve", "cover", "pnt", "crt", "log"]):
+                    continue
             docs.append(
                 (
                     move.id,
@@ -70,7 +76,12 @@ class HybridRetriever:
             nodes = self.theorem_graph_store.load_nodes()
             edges = self.theorem_graph_store.load_edges()
             planner = TheoremGraphPlanner(nodes, edges)
-            chains = planner.propose_chains(query=query, top_k=max(3, top_k // 2))
+            domain_filter = {"number_theory"} if is_prime_gap else None
+            chains = planner.propose_chains(
+                query=query,
+                top_k=max(3, top_k // 2),
+                allowed_domains=domain_filter,
+            )
             self._latest_chains = chains
             for chain in chains:
                 docs.append(
@@ -88,6 +99,9 @@ class HybridRetriever:
                 )
 
         keyword_hits = self.keyword.retrieve(query=query, docs=docs, top_k=top_k)
+        if is_prime_gap and not keyword_hits:
+            # fallback to global index only when domain-scoped retrieval is empty
+            return self.retrieve(query=query, tags=[], top_k=top_k, problem_id=problem_id)
         if not self.embeddings.available():
             return keyword_hits[:top_k]
         emb_hits = self.embeddings.retrieve(query=query, tags=tags, top_k=top_k)

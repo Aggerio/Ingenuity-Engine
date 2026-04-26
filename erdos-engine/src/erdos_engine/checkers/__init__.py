@@ -1,6 +1,7 @@
 """Checker implementations."""
 
 from .algebra import AlgebraChecker
+from .asymptotic_dominance import AsymptoticDominanceChecker
 from .brute_force import BruteForceChecker
 from .graph import GraphChecker
 from .lean import LeanChecker
@@ -13,5 +14,6 @@ __all__ = [
     "NumberTheoryChecker",
     "GraphChecker",
     "AlgebraChecker",
+    "AsymptoticDominanceChecker",
     "Z3Checker",
 ]

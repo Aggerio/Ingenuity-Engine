@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
-import re
 from dataclasses import dataclass
-from difflib import SequenceMatcher
 from pathlib import Path
 from uuid import uuid4
 
 from erdos_engine.checkers.algebra import AlgebraChecker
+from erdos_engine.checkers.asymptotic_dominance import AsymptoticDominanceChecker
 from erdos_engine.checkers.brute_force import BruteForceChecker
 from erdos_engine.checkers.graph import GraphChecker
 from erdos_engine.checkers.lean import LeanChecker
@@ -29,6 +27,14 @@ from erdos_engine.retrieval.case_based import SolvedCaseRetriever
 from erdos_engine.retrieval.hybrid import HybridRetriever
 from erdos_engine.rlm.harness import RLMHarness
 from erdos_engine.search.scoring import score_move_evaluation, score_state
+from erdos_engine.search.proof_progress import (
+    certified_stage_marker,
+    mechanism_hash,
+    move_family_diagnostic,
+    obligation_templates_ok,
+    progress_certificates_ok,
+    stage_gate_decision,
+)
 from erdos_engine.search.stall import is_semantically_stalled, is_stalled
 from erdos_engine.store.failure_store import FailureStore
 from erdos_engine.store.problem_store import ProblemStore
@@ -47,6 +53,7 @@ class BeamSearchConfig:
     use_rlm: bool = True
     use_critic: bool = False
     use_secondary_checkers: bool = False
+    curriculum_goal: str | None = None
 
 
 class BeamSearchSolver:
@@ -70,7 +77,9 @@ class BeamSearchSolver:
         self.retriever = retriever
         self.failure_store = failure_store
         self.lean_checker = lean_checker
+        self.asymptotic_checker = AsymptoticDominanceChecker()
         self.secondary_checkers = [
+            self.asymptotic_checker,
             NumberTheoryChecker(),
             GraphChecker(),
             AlgebraChecker(),
@@ -84,29 +93,12 @@ class BeamSearchSolver:
         self.case_retriever = SolvedCaseRetriever(problem_store) if problem_store else None
         self.theorem_graph_store = theorem_graph_store
 
+    def _claim_fingerprint(self, move) -> str:
+        return mechanism_hash(move)
+
     @staticmethod
-    def _normalize_claim(text: str) -> str:
-        normalized = re.sub(r"\s+", " ", text.strip().lower())
-        normalized = re.sub(r"[^a-z0-9 ]", "", normalized)
-        return normalized
-
-    def _claim_fingerprint(self, text: str) -> str:
-        return hashlib.sha1(self._normalize_claim(text).encode("utf-8")).hexdigest()[:16]
-
-    def _novelty_score(self, claim: str, accepted_claims: list[str]) -> float:
-        if not accepted_claims:
-            return 0.2
-        normalized = self._normalize_claim(claim)
-        sims = [
-            SequenceMatcher(None, normalized, self._normalize_claim(existing)).ratio()
-            for existing in accepted_claims
-        ]
-        max_sim = max(sims)
-        if max_sim >= 0.92:
-            return 0.0
-        if max_sim >= 0.80:
-            return 0.03
-        return 0.2
+    def _novelty_score(mech_hash: str, seen_hashes: set[str]) -> float:
+        return 0.0 if mech_hash in seen_hashes else 0.2
 
     @staticmethod
     def _problem4_milestones() -> dict[str, list[str]]:
@@ -128,14 +120,17 @@ class BeamSearchSolver:
 
     def _negative_memory_blocked(self, problem: Problem, move, failed_attempts: list[dict]) -> tuple[bool, str]:
         """Block near-duplicate failed directions."""
-        claim = self._normalize_claim(move.claim)
+        claim = move.claim.strip().lower()
         for failure in failed_attempts:
-            failed_claim = self._normalize_claim(str(failure.get("move", {}).get("claim", "")))
+            reason = str(failure.get("reason_failed", "near-duplicate of failed attempt"))
+            # Timeouts are often infrastructure/runtime artifacts; do not hard-block
+            # entire mechanism families solely because earlier Lean checks timed out.
+            if "timeout" in reason.lower():
+                continue
+            failed_claim = str(failure.get("move", {}).get("claim", "")).strip().lower()
             if not failed_claim:
                 continue
-            sim = SequenceMatcher(None, claim, failed_claim).ratio()
-            if sim >= 0.9:
-                reason = str(failure.get("reason_failed", "near-duplicate of failed attempt"))
+            if claim == failed_claim:
                 return True, reason
         return False, ""
 
@@ -143,7 +138,8 @@ class BeamSearchSolver:
         score = 0.0
         hits = self._milestones_hit(problem, move)
         score += 2.0 * len(hits)
-        score += self._novelty_score(move.claim, state.accepted_claims) * 5.0
+        state_mechanisms = {mechanism_hash(existing) for existing in state.moves}
+        score += self._novelty_score(mechanism_hash(move), state_mechanisms) * 5.0
         if move.required_preconditions:
             text = " ".join(state.assumptions + state.subgoals + state.accepted_claims).lower()
             matched = sum(1 for p in move.required_preconditions if p.lower() in text)
@@ -151,6 +147,63 @@ class BeamSearchSolver:
         if move.how_to_falsify_fast:
             score += 0.5
         return score
+
+    @staticmethod
+    def _jsonl_line_count(path: Path) -> int:
+        if not path.exists():
+            return 0
+        with path.open(encoding="utf-8") as handle:
+            return sum(1 for line in handle if line.strip())
+
+    def _build_rlm_search_signals(
+        self,
+        *,
+        depth: int,
+        stall_reason: str,
+        best_scores: list[float],
+        novelty_history: list[float],
+        beam: list[ResearchState],
+    ) -> dict:
+        thr = self.config.stall_threshold
+        tail_scores = best_scores[-(thr + 1) :] if len(best_scores) >= thr + 1 else list(best_scores)
+        tail_novelty = novelty_history[-thr:] if len(novelty_history) >= thr else list(novelty_history)
+        beam_snap: list[dict] = []
+        for state in beam:
+            last_move_id = state.moves[-1].id if state.moves else None
+            last_ev = state.evaluations[-1] if state.evaluations else None
+            reason = last_ev.reason if last_ev else None
+            if reason and len(reason) > 240:
+                reason = reason[:240] + "…"
+            rejection_cat = None
+            if last_ev and last_ev.evidence:
+                rejection_cat = last_ev.evidence.get("rejection_category")
+            beam_snap.append(
+                {
+                    "state_id": state.id,
+                    "score": round(float(state.score), 4),
+                    "state_depth": state.depth,
+                    "last_move_id": last_move_id,
+                    "last_eval_status": last_ev.status if last_ev else None,
+                    "last_eval_reason": reason,
+                    "rejection_category": rejection_cat,
+                }
+            )
+        graph_stats = None
+        if self.theorem_graph_store:
+            root = self.theorem_graph_store.root
+            graph_stats = {
+                "theorem_graph_dir": str(root),
+                "theorem_graph_nodes_lines": self._jsonl_line_count(self.theorem_graph_store.nodes_path),
+                "theorem_graph_edges_lines": self._jsonl_line_count(self.theorem_graph_store.edges_path),
+            }
+        return {
+            "beam_search_depth_at_stall": depth,
+            "stall_reason": stall_reason,
+            "recent_best_scores": [round(float(x), 4) for x in tail_scores],
+            "recent_novelty": [round(float(x), 4) for x in tail_novelty],
+            "beam_snapshot": beam_snap,
+            "theorem_graph_file_stats": graph_stats,
+        }
 
     @staticmethod
     def _checker_disagreement(lean_eval: MoveEvaluation, experiments: list[dict]) -> dict:
@@ -195,7 +248,10 @@ class BeamSearchSolver:
         state: ResearchState,
         move,
     ) -> tuple[MoveEvaluation, list[dict]]:
+        asym_eval = self.asymptotic_checker.evaluate(problem, state, move)
         lean_eval = self.lean_checker.evaluate(problem, state, move)
+        if asym_eval.status == "rejected_by_counterexample":
+            return asym_eval, [{"checker": self.asymptotic_checker.name, "evaluation": asym_eval.model_dump()}]
         experiments: list[dict] = []
         if self.config.use_secondary_checkers:
             for checker in self.secondary_checkers:
@@ -257,12 +313,15 @@ class BeamSearchSolver:
                 picked.append(chain)
         if not picked:
             picked = chains[:1]
-        move.theorem_chain_ids = [str(c.get("chain_id", "")) for c in picked if c.get("chain_id")]
+        picked_ids = [str(c.get("chain_id", "")) for c in picked if c.get("chain_id")]
+        if picked_ids:
+            move.theorem_chain_ids = picked_ids
         obligations: list[dict] = []
         for chain in picked:
             for obligation in chain.get("obligations", []):
                 obligations.append(obligation)
-        move.lean_obligations = obligations
+        if obligations:
+            move.lean_obligations = obligations
 
     @staticmethod
     def _broad_move_reason(problem: Problem, move) -> str | None:
@@ -319,6 +378,8 @@ class BeamSearchSolver:
         beam: list[ResearchState] = [self._initial_state(problem)]
         best_scores: list[float] = [0.0]
         novelty_history: list[float] = []
+        mechanism_history: set[str] = set()
+        curriculum_progress = {"reduction_only": 0, "covering_only": 0, "bridge_only": 0}
         rlm_notes: dict = {}
         final_status = "failed"
 
@@ -378,6 +439,92 @@ class BeamSearchSolver:
 
                     for move in moves:
                         self._attach_theorem_chains_to_move(move, theorem_chains)
+                        if self.config.curriculum_goal:
+                            stage_name = (move.target_milestone or "").lower()
+                            if self.config.curriculum_goal == "reduction_only" and "reduction" not in stage_name:
+                                continue
+                            if self.config.curriculum_goal == "covering_only" and "cover" not in stage_name:
+                                continue
+                            if self.config.curriculum_goal == "bridge_only" and "bridge" not in stage_name:
+                                continue
+                        diag = move_family_diagnostic(move)
+                        if not diag.ok:
+                            recorder.emit(
+                                "move_evaluated",
+                                {
+                                    "move": move.model_dump(),
+                                    "evaluation": {
+                                        "move_id": move.id,
+                                        "status": "rejected_by_counterexample",
+                                        "score_delta": -2.0,
+                                        "reason": diag.reason,
+                                        "evidence": {"rejection_category": "family_diagnostic_failed"},
+                                        "counterexample": diag.reason,
+                                    },
+                                    "score": state.score - 2.0,
+                                    "state": state.model_dump(),
+                                    "claim_fingerprint": self._claim_fingerprint(move),
+                                    "rejection_reason_category": "family_diagnostic_failed",
+                                    "checker_disagreement_summary": {"statuses": ["blocked"], "has_disagreement": False},
+                                    "novelty": 0.0,
+                                    "milestones_hit": [],
+                                },
+                                depth=depth,
+                                state_id=state.id,
+                            )
+                            continue
+                        obligations_ok = obligation_templates_ok(move)
+                        if not obligations_ok.allowed:
+                            recorder.emit(
+                                "move_evaluated",
+                                {
+                                    "move": move.model_dump(),
+                                    "evaluation": {
+                                        "move_id": move.id,
+                                        "status": "rejected_by_counterexample",
+                                        "score_delta": -2.0,
+                                        "reason": obligations_ok.reason,
+                                        "evidence": {"rejection_category": "obligation_template_failed"},
+                                        "counterexample": obligations_ok.reason,
+                                    },
+                                    "score": state.score - 2.0,
+                                    "state": state.model_dump(),
+                                    "claim_fingerprint": self._claim_fingerprint(move),
+                                    "rejection_reason_category": "obligation_template_failed",
+                                    "checker_disagreement_summary": {"statuses": ["blocked"], "has_disagreement": False},
+                                    "novelty": 0.0,
+                                    "milestones_hit": [],
+                                },
+                                depth=depth,
+                                state_id=state.id,
+                            )
+                            continue
+                        gate = stage_gate_decision(problem, state, move)
+                        if not gate.allowed:
+                            recorder.emit(
+                                "move_evaluated",
+                                {
+                                    "move": move.model_dump(),
+                                    "evaluation": {
+                                        "move_id": move.id,
+                                        "status": "rejected_by_counterexample",
+                                        "score_delta": -3.0,
+                                        "reason": gate.reason,
+                                        "evidence": {"rejection_category": "stage_gate_blocked"},
+                                        "counterexample": gate.reason,
+                                    },
+                                    "score": state.score - 3.0,
+                                    "state": state.model_dump(),
+                                    "claim_fingerprint": self._claim_fingerprint(move),
+                                    "rejection_reason_category": "stage_gate_blocked",
+                                    "checker_disagreement_summary": {"statuses": ["blocked"], "has_disagreement": False},
+                                    "novelty": 0.0,
+                                    "milestones_hit": [],
+                                },
+                                depth=depth,
+                                state_id=state.id,
+                            )
+                            continue
                         broad_reason = self._broad_move_reason(problem, move)
                         if broad_reason:
                             recorder.emit(
@@ -394,7 +541,7 @@ class BeamSearchSolver:
                                     },
                                     "score": state.score - 1.0,
                                     "state": state.model_dump(),
-                                    "claim_fingerprint": self._claim_fingerprint(move.claim),
+                                    "claim_fingerprint": self._claim_fingerprint(move),
                                     "rejection_reason_category": "broad_move",
                                     "checker_disagreement_summary": {"statuses": ["blocked"], "has_disagreement": False},
                                     "novelty": 0.0,
@@ -420,7 +567,7 @@ class BeamSearchSolver:
                                     },
                                     "score": state.score - 2.0,
                                     "state": state.model_dump(),
-                                    "claim_fingerprint": self._claim_fingerprint(move.claim),
+                                    "claim_fingerprint": self._claim_fingerprint(move),
                                     "rejection_reason_category": "negative_memory_block",
                                     "checker_disagreement_summary": {"statuses": ["blocked"], "has_disagreement": False},
                                     "novelty": 0.0,
@@ -431,7 +578,8 @@ class BeamSearchSolver:
                             )
                             continue
 
-                        fingerprint = self._claim_fingerprint(move.claim)
+                        mh = mechanism_hash(move)
+                        fingerprint = self._claim_fingerprint(move)
                         recorder.emit(
                             "move_proposed",
                             {
@@ -446,7 +594,7 @@ class BeamSearchSolver:
                         evaluation, experiments = self._evaluate_move(problem, state, move)
                         self._update_graph_trust(move, evaluation)
                         disagreement = self._checker_disagreement(evaluation, experiments)
-                        novelty = self._novelty_score(move.claim, state.accepted_claims)
+                        novelty = self._novelty_score(mh, mechanism_history)
                         novelty_history.append(novelty)
 
                         milestones_hit = self._milestones_hit(problem, move)
@@ -454,7 +602,8 @@ class BeamSearchSolver:
                         newly_achieved = [f"milestone:{m}" for m in milestones_hit if f"milestone:{m}" not in achieved]
                         milestone_bonus = 2.0 if newly_achieved else 0.0
 
-                        move_score = score_move_evaluation(evaluation, move)
+                        has_cert = progress_certificates_ok(move)
+                        move_score = score_move_evaluation(evaluation, move, has_progress_certificate=has_cert)
                         if novelty <= 0.01 and evaluation.status != "verified_formally":
                             # Prevent score inflation from repetitive, unverified moves.
                             move_score = min(move_score, -1.0)
@@ -470,18 +619,28 @@ class BeamSearchSolver:
                         new_state.retrieved_lemmas = [r.item_id for r in retrieved]
                         new_state.assumptions.extend(newly_achieved)
 
-                        if evaluation.status in {"verified_formally", "accepted_computationally", "already_known"} and novelty > 0.01:
+                        if (
+                            evaluation.status in {"verified_formally", "accepted_computationally", "already_known"}
+                            and novelty > 0.01
+                            and has_cert
+                        ):
                             new_state.accepted_claims.append(move.claim)
                         elif evaluation.status == "rejected_by_counterexample":
                             new_state.rejected_claims.append(move.claim)
                         elif evaluation.status == "plausible_informal":
                             new_state.subgoals.append(f"formalize: {move.claim}")
 
+                        stage_marker = certified_stage_marker(problem, move, evaluation)
+                        if stage_marker:
+                            new_state.assumptions.append(stage_marker)
+                        repeated = mh in mechanism_history
+                        mechanism_history.add(mh)
                         new_state.score = score_state(
                             previous_score=state.score,
                             move_scores=[move_score + milestone_bonus],
                             depth=depth,
                             novelty=novelty,
+                            repeated_mechanism=repeated,
                         )
                         new_state.trace.append(
                             f"depth={depth} move={move.id} status={evaluation.status} novelty={novelty:.2f} milestones={milestones_hit} score={new_state.score:.2f}"
@@ -515,6 +674,14 @@ class BeamSearchSolver:
                 beam = candidates[: self.config.beam_width]
                 best_scores.append(beam[0].score)
                 LOG.info("depth=%s best_score=%.2f", depth, beam[0].score)
+                if self.config.max_depth == 3 and problem.id == "erdos_004":
+                    best = beam[0]
+                    if "stage:interval" in best.assumptions:
+                        curriculum_progress["reduction_only"] = 1
+                    if "stage:covering_existence" in best.assumptions:
+                        curriculum_progress["covering_only"] = 1
+                    if "stage:parameter_growth_bridge" in best.assumptions:
+                        curriculum_progress["bridge_only"] = 1
 
                 if any(self._is_target_solved(problem, s) for s in beam):
                     final_status = "verified_solution"
@@ -524,12 +691,13 @@ class BeamSearchSolver:
                 stalled_numeric = is_stalled(best_scores, self.config.stall_threshold)
                 stalled_semantic = is_semantically_stalled(novelty_history, self.config.stall_threshold)
                 if stalled_numeric or stalled_semantic:
+                    stall_reason = "semantic" if stalled_semantic else "numeric"
                     recorder.emit(
                         "stall_detected",
                         {
                             "best_scores": best_scores[-(self.config.stall_threshold + 1):],
                             "novelty_tail": novelty_history[-self.config.stall_threshold :],
-                            "reason": "semantic" if stalled_semantic else "numeric",
+                            "reason": stall_reason,
                         },
                         depth=depth,
                     )
@@ -538,11 +706,24 @@ class BeamSearchSolver:
                             existing.trace.append("rlm triggered after stall")
                         failures = self.failure_store.search_failures(problem.id, problem.statement, top_k=10)
                         solved_cases = self.case_retriever.retrieve(problem, top_k=3) if self.case_retriever else []
-                        rlm_out = self.rlm.run(problem, beam, failures, solved_cases)
+                        search_signals = self._build_rlm_search_signals(
+                            depth=depth,
+                            stall_reason=stall_reason,
+                            best_scores=best_scores,
+                            novelty_history=novelty_history,
+                            beam=beam,
+                        )
+                        rlm_out = self.rlm.run(
+                            problem, beam, failures, solved_cases, search_signals=search_signals
+                        )
                         rlm_notes = rlm_out.model_dump()
                         recorder.emit(
                             "rlm_started",
-                            {"failure_analysis": rlm_out.failure_analysis, "subproblems": rlm_out.subproblems},
+                            {
+                                "failure_analysis": rlm_out.failure_analysis,
+                                "subproblems": rlm_out.subproblems,
+                                "search_signals": search_signals,
+                            },
                             depth=depth,
                         )
                         ranked = sorted(
@@ -557,6 +738,15 @@ class BeamSearchSolver:
                                 depth=depth,
                             )
                             state = beam[0]
+                            gate = stage_gate_decision(problem, state, move)
+                            if not gate.allowed:
+                                continue
+                            diag = move_family_diagnostic(move)
+                            if not diag.ok:
+                                continue
+                            obligations_ok = obligation_templates_ok(move)
+                            if not obligations_ok.allowed:
+                                continue
                             evaluation, experiments = self._evaluate_move(problem, state, move)
                             self._update_graph_trust(move, evaluation)
                             new_state = state.model_copy(deep=True)
@@ -565,14 +755,22 @@ class BeamSearchSolver:
                             new_state.moves.append(move)
                             new_state.evaluations.append(evaluation)
                             new_state.experiments.extend(experiments)
-                            novelty = self._novelty_score(move.claim, state.accepted_claims)
+                            mh = mechanism_hash(move)
+                            novelty = self._novelty_score(mh, mechanism_history)
                             novelty_history.append(novelty)
+                            has_cert = progress_certificates_ok(move)
+                            repeated = mh in mechanism_history
+                            mechanism_history.add(mh)
                             new_state.score = score_state(
                                 state.score,
-                                [score_move_evaluation(evaluation, move)],
+                                [score_move_evaluation(evaluation, move, has_progress_certificate=has_cert)],
                                 depth,
                                 novelty=novelty,
+                                repeated_mechanism=repeated,
                             )
+                            stage_marker = certified_stage_marker(problem, move, evaluation)
+                            if stage_marker:
+                                new_state.assumptions.append(stage_marker)
                             new_state.trace.append(f"rlm injection move={move.id} status={evaluation.status}")
                             beam.append(new_state)
                             recorder.emit(
@@ -593,6 +791,12 @@ class BeamSearchSolver:
                         final_status = "stalled"
                         recorder.emit("status_changed", {"status": final_status}, depth=depth)
                         break
+            if (
+                self.config.max_depth == 3
+                and problem.id == "erdos_004"
+                and all(v > 0 for v in curriculum_progress.values())
+            ):
+                self.config.max_depth = 10
         except Exception as exc:  # noqa: BLE001
             recorder.emit("error", {"message": str(exc)})
             raise

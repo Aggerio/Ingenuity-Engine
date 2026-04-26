@@ -21,7 +21,9 @@ class Settings(BaseModel):
     openai_compatible_critic_api_key: str | None = None
     openai_compatible_critic_base_url: str = "https://openrouter.ai/api"
     openai_compatible_critic_model: str | None = "google/gemini-2.5-flash-lite"
-    llm_timeout_seconds: int = 45
+    openai_compatible_normalizer_model: str | None = None
+    # For OpenAI-compatible streaming: urllib3 read timeout between chunks (idle); total cap is larger in client.
+    llm_timeout_seconds: int = 600
     llm_max_tokens: int = 1800
 
     lean_project_dir: Path = Field(default=Path("lean_workspace"))
@@ -57,7 +59,8 @@ class Settings(BaseModel):
             openai_compatible_critic_model=os.getenv(
                 "OPENAI_COMPATIBLE_CRITIC_MODEL", "google/gemini-2.5-flash-lite"
             ),
-            llm_timeout_seconds=int(os.getenv("LLM_TIMEOUT_SECONDS", "45")),
+            openai_compatible_normalizer_model=os.getenv("OPENAI_COMPATIBLE_NORMALIZER_MODEL"),
+            llm_timeout_seconds=int(os.getenv("LLM_TIMEOUT_SECONDS", "600")),
             llm_max_tokens=int(os.getenv("LLM_MAX_TOKENS", "1800")),
             lean_project_dir=Path(os.getenv("LEAN_PROJECT_DIR", "lean_workspace")),
             lean_timeout_seconds=int(os.getenv("LEAN_TIMEOUT_SECONDS", "600")),

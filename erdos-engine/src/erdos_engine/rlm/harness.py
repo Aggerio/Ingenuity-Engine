@@ -28,12 +28,14 @@ class RLMHarness:
         beam_states: list[ResearchState],
         failures: list[dict],
         solved_cases: list[dict],
+        search_signals: dict | None = None,
     ) -> RLMOutput:
         prompt = build_rlm_prompt(
             problem=problem,
             beam_states=beam_states,
             failures=failures,
             solved_cases=solved_cases,
+            search_signals=search_signals,
         )
         base = self.llm.generate_rlm(prompt)
 
@@ -47,7 +49,7 @@ class RLMHarness:
         ]
         notes = []
         for agent in agents:
-            out = agent.run(problem, beam_states, failures)
+            out = agent.run(problem, beam_states, failures, search_signals)
             if out:
                 notes.append(f"{agent.name}: {out}")
 

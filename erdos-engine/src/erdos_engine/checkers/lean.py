@@ -211,6 +211,23 @@ end ErdosEngine
         return "lean_unmapped_or_other"
 
     def evaluate(self, problem: Problem, state: ResearchState, move: ProofMove) -> MoveEvaluation:
+        if move.move_type == "external_theorem_anchor":
+            if not move.translation_steps or not move.exact_asymptotic_form:
+                return MoveEvaluation(
+                    move_id=move.id,
+                    status="invalid_format",
+                    reason="external_theorem_anchor requires exact asymptotic form and translation steps.",
+                    score_delta=-3.0,
+                    evidence={"rejection_category": "anchor_missing_reference_fields"},
+                )
+            if not move.lean_obligations:
+                return MoveEvaluation(
+                    move_id=move.id,
+                    status="invalid_format",
+                    reason="external_theorem_anchor requires downstream obligations, not prose-only anchor.",
+                    score_delta=-3.0,
+                    evidence={"rejection_category": "anchor_missing_downstream_obligations"},
+                )
         theorem_name = self._sanitize(f"{problem.id}_{move.id}_{state.depth}")
         lean_src = self._obligation_source(theorem_name, move.lean_obligations)
         if lean_src is None:

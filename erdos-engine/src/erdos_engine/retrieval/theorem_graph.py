@@ -33,14 +33,25 @@ class TheoremGraphPlanner:
         overlap = len(query_symbols.intersection(node_symbols))
         return overlap / float(max(len(query_symbols), 1))
 
-    def propose_chains(self, query: str, top_k: int = 5, max_hops: int = 2) -> list[DerivationChain]:
+    def propose_chains(
+        self,
+        query: str,
+        top_k: int = 5,
+        max_hops: int = 2,
+        allowed_domains: set[str] | None = None,
+    ) -> list[DerivationChain]:
         query_norm = normalize_statement(query)
         query_symbols = set(extract_symbols(query_norm))
         if not self.nodes:
             return []
 
+        candidate_nodes = self.nodes
+        if allowed_domains:
+            candidate_nodes = [node for node in self.nodes if node.domain.lower() in allowed_domains]
+            if not candidate_nodes:
+                candidate_nodes = self.nodes
         start_nodes = sorted(
-            self.nodes,
+            candidate_nodes,
             key=lambda node: (self._similarity(query_symbols, node), node.trust_score),
             reverse=True,
         )[: max(top_k * 3, 10)]

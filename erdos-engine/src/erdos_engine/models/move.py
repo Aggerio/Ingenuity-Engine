@@ -17,6 +17,7 @@ MoveType = Literal[
     "known_theorem_analogy",
     "proof_skeleton_step",
     "extremal_example",
+    "external_theorem_anchor",
 ]
 
 
@@ -41,6 +42,13 @@ class ProofMove(BaseModel):
     target_milestone: str | None = None
     theorem_chain_ids: list[str] = Field(default_factory=list)
     lean_obligations: list[dict] = Field(default_factory=list)
+    source_quality: Literal["high", "medium", "low", "unknown"] = "unknown"
+    exact_asymptotic_form: str | None = None
+    translation_steps: list[str] = Field(default_factory=list)
+    mechanism_core_construction: str = ""
+    mechanism_asymptotic_regime: str = ""
+    mechanism_bottleneck_attacked: str = ""
+    progress_certificates: list[dict] = Field(default_factory=list)
 
 
 class MoveEvaluation(BaseModel):

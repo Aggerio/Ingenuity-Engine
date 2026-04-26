@@ -55,6 +55,11 @@ def _build_parser() -> argparse.ArgumentParser:
     run.add_argument("--run-label", type=str, default=None)
     run.add_argument("--llm-timeout-seconds", type=int, default=None)
     run.add_argument("--llm-max-tokens", type=int, default=None)
+    run.add_argument(
+        "--curriculum-goal",
+        choices=["reduction_only", "covering_only", "bridge_only"],
+        default=None,
+    )
 
     add_lemma = sub.add_parser("add-lemma")
     add_lemma.add_argument("--file", required=True)
@@ -85,6 +90,7 @@ def _select_llm(settings: Settings):
             model=settings.openai_compatible_model,
             timeout=settings.llm_timeout_seconds,
             max_tokens=settings.llm_max_tokens,
+            normalizer_model=settings.openai_compatible_normalizer_model,
         )
         critic = None
         if settings.openai_compatible_critic_model:
@@ -252,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
                 use_rlm=run_settings.use_rlm,
                 use_critic=run_settings.use_critic,
                 use_secondary_checkers=run_settings.use_secondary_checkers,
+                curriculum_goal=args.curriculum_goal,
             ),
         )
         result = solver.solve(
@@ -263,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
                 "use_rlm": run_settings.use_rlm,
                 "attempts_root": str(attempts_root),
                 "run_label": args.run_label,
+                "curriculum_goal": args.curriculum_goal,
             },
             lean_preflight=lean_preflight,
         )

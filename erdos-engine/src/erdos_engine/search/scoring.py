@@ -5,7 +5,12 @@ from __future__ import annotations
 from erdos_engine.models import MoveEvaluation, ProofMove
 
 
-def score_move_evaluation(evaluation: MoveEvaluation, move: ProofMove) -> float:
+def score_move_evaluation(
+    evaluation: MoveEvaluation,
+    move: ProofMove,
+    *,
+    has_progress_certificate: bool = False,
+) -> float:
     """Score one move result using configured v0 heuristics."""
     base = {
         "verified_formally": 10.0,
@@ -24,9 +29,19 @@ def score_move_evaluation(evaluation: MoveEvaluation, move: ProofMove) -> float:
         bonus += 2.0
     if move.risk and "vague" in move.risk.lower():
         bonus -= 2.0
+    if not has_progress_certificate:
+        bonus -= 3.0
     return base + bonus + evaluation.score_delta
 
 
-def score_state(previous_score: float, move_scores: list[float], depth: int, novelty: float = 0.0) -> float:
+def score_state(
+    previous_score: float,
+    move_scores: list[float],
+    depth: int,
+    novelty: float = 0.0,
+    *,
+    repeated_mechanism: bool = False,
+) -> float:
     """Aggregate state score with depth penalty and novelty bonus."""
-    return previous_score + sum(move_scores) + novelty - (0.5 * depth)
+    repeat_penalty = 2.0 if repeated_mechanism else 0.0
+    return previous_score + sum(move_scores) + novelty - (0.5 * depth) - repeat_penalty

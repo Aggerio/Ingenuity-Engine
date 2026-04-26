@@ -49,6 +49,14 @@ Each move MUST be JSON with:
 - required_preconditions
 - how_to_falsify_fast
 - target_milestone
+- source_quality
+- exact_asymptotic_form
+- translation_steps
+- mechanism_core_construction
+- mechanism_asymptotic_regime
+- mechanism_bottleneck_attacked
+- lean_obligations
+- progress_certificates
 
 Valid target_milestone values:
 - reduction_interval_to_gap
@@ -61,6 +69,50 @@ Rules:
 - Do not repeat rejected or near-duplicate moves.
 - Explain transfer from solved cases explicitly.
 - If preconditions are uncertain, say so and add fast falsification plan.
+- `external_theorem_anchor` moves must include non-empty `translation_steps`,
+  at least one nontrivial `lean_obligations` entry, and `exact_asymptotic_form`.
+- `progress_certificates` must use machine-checkable types:
+  `new_inequality`, `new_parameter_relation`, or `improved_coverage_bound`.
+- CRITICAL JSON CONTRACT:
+  - `moves` must be a JSON array of OBJECTS only.
+  - Do NOT output strings/numbers/arrays inside `moves`.
+  - Do NOT output markdown, prose, comments, or trailing text.
+  - Missing required fields is invalid; use empty lists/strings only where schema allows.
+
+Allowed output shape:
+{{
+  "moves": [
+    {{
+      "id": "move_0",
+      "move_type": "reduction",
+      "claim": "...",
+      "rationale": "...",
+      "test_plan": "...",
+      "dependencies": ["..."],
+      "expected_effect": "...",
+      "risk": "medium",
+      "matched_prior_case_ids": [],
+      "why_this_applies_here": "...",
+      "required_preconditions": [],
+      "how_to_falsify_fast": "...",
+      "target_milestone": "reduction_interval_to_gap",
+      "theorem_chain_ids": [],
+      "lean_obligations": [{{"statement": "A = B -> C = A -> C = B"}}],
+      "source_quality": "medium",
+      "exact_asymptotic_form": "log_2(n) <= log_2(n) + 1",
+      "translation_steps": ["..."],
+      "mechanism_core_construction": "...",
+      "mechanism_asymptotic_regime": "iterated_logs",
+      "mechanism_bottleneck_attacked": "...",
+      "progress_certificates": [{{"type": "new_inequality", "statement": "..."}}]
+    }}
+  ]
+}}
+
+Invalid examples (never do this):
+- {{"moves": ["move 1: ...", "move 2: ..."]}}
+- {{"moves": [{{...}}]}} plus any text before/after JSON
+- ```json ... ```
 
 Problem:
 {problem.statement}
@@ -89,8 +141,21 @@ def build_rlm_prompt(
     beam_states: list[ResearchState],
     failures: list[dict],
     solved_cases: list[dict],
+    search_signals: dict | None = None,
 ) -> str:
     states = [s.model_dump() for s in beam_states]
+    signals_block = ""
+    if search_signals:
+        signals_block = f"""
+Latest stall signals (current run snapshot — ground your analysis in THIS JSON; do not ignore it):
+{json.dumps(search_signals, ensure_ascii=False)}
+
+Additional requirements tied to the signals:
+- Name concrete failure modes visible in the snapshot (e.g. Lean timeouts, tautological Lean mappings,
+  score collapse, repeated fallback move IDs) and explain how your lemmas address each.
+- If theorem_graph_file_stats shows on-disk graph data but the beam still lacks compositional progress,
+  propose moves that reference explicit proof obligations or multi-step chains, not generic boilerplate.
+"""
     return f"""
 You are in recursive research mode because direct beam search has stalled.
 
@@ -122,7 +187,7 @@ Failures:
 
 Similar solved cases:
 {json.dumps(solved_cases, ensure_ascii=False)}
-
+{signals_block}
 Return only valid JSON:
 {{
   "failure_analysis": "...",
@@ -167,6 +232,9 @@ def build_json_repair_prompt(bad_text: str, schema_hint: str) -> str:
     return (
         "Return valid JSON only. "
         "Do not add markdown fences. "
+        "Do not include explanatory text. "
+        "Top-level must be a JSON object matching the schema hint. "
+        "If a key expects an array of objects, do not return array entries as strings. "
         f"Schema hint: {schema_hint}. "
         f"Input: {bad_text}"
     )

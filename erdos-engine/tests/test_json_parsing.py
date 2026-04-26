@@ -21,3 +21,9 @@ def test_repair_invalid_json() -> None:
     fixed = '{"moves": []}'
     payload = parse_json_with_single_repair("{bad", lambda _: fixed)
     assert payload["moves"] == []
+
+
+def test_strict_move_parse_rejects_invalid_entries() -> None:
+    payload = {"moves": [{"claim": "missing move_type"}]}
+    with pytest.raises(ValueError):
+        parse_moves_payload(payload, strict=True)
