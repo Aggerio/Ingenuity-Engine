@@ -1,0 +1,23 @@
+{
+  "id": "state_86eec777",
+  "problem_id": "erdos_004",
+  "depth": 0,
+  "subgoals": [
+    "Milestone 1: reduction from prime-free interval to p_{n+1}-p_n bound",
+    "Milestone 2: valid CRT covering lemma with pairwise-coprime structure",
+    "Milestone 3: parameter-growth lemma linking N, Q, and n",
+    "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]"
+  ],
+  "assumptions": [],
+  "accepted_claims": [],
+  "rejected_claims": [],
+  "retrieved_lemmas": [],
+  "moves": [],
+  "evaluations": [],
+  "experiments": [],
+  "score": 0.0,
+  "trace": [
+    "initialized state"
+  ],
+  "stalled_steps": 0
+}

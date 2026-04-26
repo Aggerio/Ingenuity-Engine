@@ -1,0 +1,14 @@
+{
+  "run_id": "20260425_231135_solve4_20260425_231130",
+  "problem_id": "erdos_004",
+  "status": "started",
+  "config": {
+    "beam_width": 3,
+    "max_depth": 100,
+    "moves_per_state": 3,
+    "use_rlm": true,
+    "attempts_root": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos",
+    "run_label": "solve4_20260425_231130"
+  },
+  "generated_at": "2026-04-25T23:11:35.773103+00:00"
+}

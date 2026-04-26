@@ -1,0 +1,112 @@
+{
+  "id": "state_a10fde98",
+  "problem_id": "erdos_004",
+  "depth": 2,
+  "subgoals": [
+    "Milestone 1: reduction from prime-free interval to p_{n+1}-p_n bound",
+    "Milestone 2: valid CRT covering lemma with pairwise-coprime structure",
+    "Milestone 3: parameter-growth lemma linking N, Q, and n",
+    "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]",
+    "formalize: â constants c1, c2 >0 such that for arbitrarily large k, there exist distinct primes q1<...<q_r â¤ k log k, exponents e_i â¥1 with m_i = q_i^{e_i} pairwise coprime, Q=â m_i â¤ exp(c1 k), and residues r_i mod m_i s.t. âª_i {d â [1, L] : d â¡ r_i mod m_i} = [1,L] with L â¥ c2 (log Q log log Q log log log log Q) / (log log log Q)^2.",
+    "formalize: If there are infinitely many prime-free intervals (N, N + L] with N â¥ 1, L > 2 C \\frac{\\log N \\log\\log N \\log\\log\\log\\log N}{(\\log\\log\\log N)^2}, then for n = \\pi(N), we have p_{n+1} - p_n > C \\frac{\\log n \\log\\log n \\log\\log\\log\\log n}{(\\log\\log\\log n)^2} \\log n for infinitely many n, using li(N) bounds."
+  ],
+  "assumptions": [
+    "milestone:crt_covering",
+    "milestone:parameter_growth",
+    "milestone:reduction_gap_to_pn"
+  ],
+  "accepted_claims": [],
+  "rejected_claims": [],
+  "retrieved_lemmas": [
+    "move_naturalproofs_proofwiki_5e89d146b4788138",
+    "move_naturalproofs_proofwiki_6da5b7d91d63504b",
+    "move_naturalproofs_proofwiki_1d32258787318698",
+    "move_naturalproofs_stacks_47acd6da8f08a29d",
+    "move_naturalproofs_proofwiki_da9311459cf9c885",
+    "move_naturalproofs_proofwiki_5391ae90a5ccd29f",
+    "move_naturalproofs_proofwiki_02c7116ff23aa60c",
+    "move_naturalproofs_proofwiki_4ef03e6024c03449",
+    "move_naturalproofs_proofwiki_0d50a18a74051435",
+    "move_naturalproofs_proofwiki_2363e11252c53588"
+  ],
+  "moves": [
+    {
+      "id": "move_llm_2",
+      "move_type": "auxiliary_lemma",
+      "claim": "â constants c1, c2 >0 such that for arbitrarily large k, there exist distinct primes q1<...<q_r â¤ k log k, exponents e_i â¥1 with m_i = q_i^{e_i} pairwise coprime, Q=â m_i â¤ exp(c1 k), and residues r_i mod m_i s.t. âª_i {d â [1, L] : d â¡ r_i mod m_i} = [1,L] with L â¥ c2 (log Q log log Q log log log log Q) / (log log log Q)^2.",
+      "rationale": "Standard ErdÅs-Rankin covering construction using prime powers for distinct primes; quantitative bounds from greedy covering or known tables tuned to match target growth.",
+      "test_plan": "Implement small k=5,10 in Lean/Python: find explicit m_i, r_i covering [1,L]; scale to verify growth; if Lean times out, fallback to existence via combinatorial argument.",
+      "dependencies": [
+        "Existence of covering systems with distinct prime power moduli",
+        "Primorial growth: log (primorial_k) â¼ k"
+      ],
+      "expected_effect": "Provides the CRT covering for prime-free intervals of target length, advancing to parameter linking.",
+      "risk": "medium",
+      "source": "llm",
+      "matched_prior_case_ids": [],
+      "why_this_applies_here": "Directly matches milestone 2; pairwise-coprime prime powers standard for CRT solvability without conflicts.",
+      "required_preconditions": [
+        "Uncertain: exact constants c1,c2; assumes known covering densities"
+      ],
+      "how_to_falsify_fast": "For k=10, compute max L coverable with râ¤10 prime powers â¤ exp(10); if L < 10 log( exp(10) ) say, falsify growth.",
+      "target_milestone": "crt_covering",
+      "theorem_chain_ids": [],
+      "lean_obligations": []
+    },
+    {
+      "id": "move_llm_0",
+      "move_type": "reduction",
+      "claim": "If there are infinitely many prime-free intervals (N, N + L] with N â¥ 1, L > 2 C \\frac{\\log N \\log\\log N \\log\\log\\log\\log N}{(\\log\\log\\log N)^2}, then for n = \\pi(N), we have p_{n+1} - p_n > C \\frac{\\log n \\log\\log n \\log\\log\\log\\log n}{(\\log\\log\\log n)^2} \\log n for infinitely many n, using li(N) bounds.",
+      "rationale": "Standard transfer: p_n â¤ N < p_{n+1}, so gap > L; PNT gives \\log n â¼ \\log N, matching log-scale terms asymptotically for large N.",
+      "test_plan": "Symbolically verify inequality L > f(n) using \\pi(N) â¼ N / \\log N and change of variables; Lean tactic with real_asymp or logssimp.",
+      "dependencies": [
+        "Prime Number Theorem (li(N) bounds)",
+        "Monotonicity of \\pi"
+      ],
+      "expected_effect": "Completes Milestone 1, reduces main goal to prime-free intervals.",
+      "risk": "low",
+      "source": "llm",
+      "matched_prior_case_ids": [],
+      "why_this_applies_here": "Direct analog to ErdÅs-Rankin reductions; log terms match problem exactly up to constants.",
+      "required_preconditions": [
+        "PNT: |\\pi(N) - li(N)| = o(N / \\log N)"
+      ],
+      "how_to_falsify_fast": "Check if \\log n = \\log \\pi(N) â¼ \\log(N / \\log N) = \\log N + o(1) preserves the iterated log ratios; numeric eval for N=exp(exp(10)).",
+      "target_milestone": "reduction_interval_to_gap",
+      "theorem_chain_ids": [],
+      "lean_obligations": []
+    }
+  ],
+  "evaluations": [
+    {
+      "move_id": "move_llm_2",
+      "status": "plausible_informal",
+      "score_delta": 0.0,
+      "reason": "Mapped Lean theorem is tautological; formal progress not credited.",
+      "evidence": {
+        "lean_formalization_attempted": true,
+        "rejection_category": "tautological_mapping_blocked"
+      },
+      "counterexample": null
+    },
+    {
+      "move_id": "move_llm_0",
+      "status": "plausible_informal",
+      "score_delta": 0.0,
+      "reason": "Mapped Lean theorem is tautological; formal progress not credited.",
+      "evidence": {
+        "lean_formalization_attempted": true,
+        "rejection_category": "tautological_mapping_blocked"
+      },
+      "counterexample": null
+    }
+  ],
+  "experiments": [],
+  "score": 10.899999999999999,
+  "trace": [
+    "initialized state",
+    "depth=1 move=move_llm_2 status=plausible_informal novelty=0.20 milestones=['crt_covering', 'parameter_growth'] score=4.70",
+    "depth=2 move=move_llm_0 status=plausible_informal novelty=0.20 milestones=['reduction_gap_to_pn', 'parameter_growth'] score=10.90"
+  ],
+  "stalled_steps": 0
+}

@@ -1,0 +1,48 @@
+{
+  "model": "deepseek/deepseek-v4-flash",
+  "prompt_preview": "You are in recursive research mode because direct beam search has stalled.\n\nYour job:\n1. Analyze why previous attempts failed.\n2. Propose reformulations.\n3. Generate better lemmas in three buckets:\n   - bridge_lemmas (connect current state to milestone)\n   - blocker_lemmas (remove immediate blockers)\n   - validator_lemmas (fastly falsify tempting wrong paths)\n4. Output ranked candidate moves for injection.\n\nEach lemma/move must include:\n- move_type, claim, rationale, test_plan, dependencies, expected_effect, risk\n- matched_prior_case_ids\n- why_this_applies_here\n- required_preconditions\n- how_to_falsify_fast\n- target_milestone\n\nProblem:\nIs it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]\n\nBeam states:\n[{\"id\": \"state_2fe3625f\", \"problem_id\": \"erdos_004\", \"depth\": 4, \"subgoals\": [\"Milestone 1: reduction from prime-free interval to p_{n+1}-p_n bound\", \"Milestone 2: valid CRT covering lemma ",
+  "response_body": {
+    "id": "gen-1777157727-8Pqq7feruDSeZRxcivOQ",
+    "object": "chat.completion",
+    "created": 1777157727,
+    "model": "deepseek/deepseek-v4-flash-20260423",
+    "provider": "Novita",
+    "system_fingerprint": null,
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "length",
+        "native_finish_reason": "length",
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 2806,
+      "completion_tokens": 2200,
+      "total_tokens": 5006,
+      "cost": 0.00100884,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00100884,
+        "upstream_inference_prompt_cost": 0.00039284,
+        "upstream_inference_completions_cost": 0.000616
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2330,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  }
+}

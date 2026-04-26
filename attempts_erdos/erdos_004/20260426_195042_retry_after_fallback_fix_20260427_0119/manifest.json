@@ -1,0 +1,29 @@
+{
+  "run_id": "20260426_195042_retry_after_fallback_fix_20260427_0119",
+  "problem_id": "erdos_004",
+  "status": "stalled",
+  "config": {
+    "beam_width": 5,
+    "max_depth": 10,
+    "moves_per_state": 8,
+    "use_rlm": true,
+    "attempts_root": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos",
+    "run_label": "retry_after_fallback_fix_20260427_0119",
+    "curriculum_goal": null
+  },
+  "lean_preflight": {
+    "elan": "elan 4.2.1 (3d5138e15 2026-03-18)",
+    "lake": "Lake version 5.0.0-src+3dc1a08 (Lean version 4.30.0-rc2)",
+    "lake_build": "Build completed successfully (8334 jobs).\n"
+  },
+  "artifacts": {
+    "attempt_dir": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119",
+    "manifest_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119/manifest.json",
+    "events_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119/events.jsonl",
+    "best_state_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119/best_state.json",
+    "report_md_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119/report.md",
+    "report_json_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119/report.json",
+    "lean_preflight_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119/logs/lean_preflight.json",
+    "rlm_notes_path": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos/erdos_004/20260426_195042_retry_after_fallback_fix_20260427_0119/rlm_notes.json"
+  }
+}
