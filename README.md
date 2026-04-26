@@ -75,6 +75,31 @@ This is where the project broke:
 
 At that point, I had to call the project what it was: a good research harness that failed at its primary math objective.
 
+## Iteration Breakdown (Cases, Specs, Learnings)
+
+The table below summarizes the main iteration clusters I ran, using commit history plus representative run reports from `attempts_erdos/erdos_004/`.
+
+| Iteration case | Representative runs | Specs (what I changed) | Expected outcome | Actual outcome | Advantage | Disadvantage | What I learned |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Calibration and smoke setup | `20260425_192741_calibration`, `20260425_210221_smoke_case_rlm` | Verified harness wiring, Lean preflight, minimal search configs, baseline RLM on | Confirm pipeline integrity and establish first positive signal | Got `plausible_progress` signals and stable traces, but with low-realism accepted claims | Fast feedback, good for debugging system glue | Early "progress" metrics were easy to game and not tightly coupled to true theorem progress | Infrastructure can look healthy while math progress is still fake/weak |
+| Early model pairing (DeepSeek/Gemini-lite style runs) | `20260425_194839_deepseek_v4_flash`, `20260425_202605_deepseek_plus_gemini31lite` | Swapped proposer/critic combinations and prompt styles; kept retrieval + Lean-first checks | Better move quality from model diversity | Produced cleaner candidate skeletons and some verified intermediate artifacts, but no end-to-end proof | Broader idea diversity and better wording of steps | More model variation increased operational complexity without breakthrough | Model swaps alone do not solve the language-to-formal bottleneck |
+| Retry storm: parser/prompt/timeout patches | `20260425_213225_stall_patch_probe` through `20260425_215508_solve4_retry_with_fallback_logging` | Repeated retries with JSON parsing fixes, timeout tuning, content patches, fallback logging | Break out of stall loops and convert more moves to valid formal steps | Mostly local improvements; still no robust theorem-level advancement | Rapid iteration exposed brittle points quickly | High churn created "activity noise" and made genuine progress hard to distinguish | Tight parser policies are necessary but not sufficient for deep math progress |
+| Depth/beam and graph-focus expansions | `20260425_220809_solve4_depth100`, `20260425_224539_solve4_graph_focus_depth100`, `20260425_230403_solve4_graph_focus_solo` | Increased search depth/beam variants, graph-focused retrieval, solo graph-focused tests | More search budget should find novel viable paths | More logs and candidate moves, but repeated pattern families and persistent stalls | Better coverage of search space and clearer failure signatures | Compute budget mostly amplified repeated low-value branches | More search without stronger guidance mainly scales repetition |
+| Lean/policy hardening and no-secondary checks | `20260425_220434_solve4_lean600_no_secondary`, `20260425_230656_solve4_grok411_20260425_230651` | Lean timeout/policy changes, secondary-checker toggles, stricter acceptance pressure | Reduce false positives and force cleaner formal path | Integrity improved, but accepted-claim count did not translate to final theorem progress | Better honesty and lower risk of fake wins | Stricter gates also reduce apparent momentum | Verification strictness is correct, but it exposes missing constructive proof machinery |
+| Curriculum decomposition (reduction/covering/bridge) | `20260426_192035_curriculum_reduction_20260427_0050`, `20260426_192117_curriculum_covering_20260427_0050`, `20260426_192207_curriculum_bridge_20260427_0050` | Split objective into milestones (gap reduction, CRT covering, parameter growth bridge) | Modular subgoals should compound into full proof progress | In representative reports, runs still returned `stalled` with empty accepted claims | Correct decomposition strategy in theory | Subgoal interfaces remained too loose to force compositional progress | Curriculum needs stricter contracts between subgoals, not just renamed milestones |
+| Final hardening retries and verification reruns | `20260426_195042_retry_after_fallback_fix_20260427_0119` through `20260426_210429_retry_after_prompt_hardening_20260427_0234` | Prompt hardening, fallback fixes, obligation overwrite fixes, timeout policy tweaks, verification reruns | Last-mile stabilization should recover usable path | Representative final reports stayed at `stalled`, depth 0, no accepted claims | Produced definitive evidence that failure was structural, not one-off | Consumed effort without objective movement | The failure mode was architectural: orchestration quality exceeded mathematical proof capability |
+
+### Cross-Iteration Pattern
+
+Across these cases, the same pattern repeated:
+
+1. I improved infrastructure reliability.
+2. I improved trace quality and observability.
+3. I improved filtering against bad model output.
+4. I did **not** improve conversion of candidate reasoning into durable formal theorem progress.
+
+That is the core reason this is marked as a failed attempt rather than an unfinished success.
+
 ## What Worked
 
 - **End-to-end execution worked.** Retrieval, generation, evaluation, and report writing ran repeatedly.
