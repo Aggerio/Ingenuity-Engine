@@ -1,0 +1,154 @@
+{
+  "problem": {
+    "id": "erdos_004",
+    "title": "Erdos Problem #4",
+    "statement": "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]",
+    "tags": [
+      "number theory",
+      "primes"
+    ],
+    "status": "solved",
+    "known_solution_path": "known_solution.md",
+    "source_url": "https://www.erdosproblems.com/4",
+    "difficulty_guess": "unknown",
+    "computationally_testable": true,
+    "formalizable": true
+  },
+  "config": {
+    "beam_width": 3,
+    "max_depth": 10,
+    "moves_per_state": 3,
+    "use_rlm": true,
+    "attempts_root": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos",
+    "run_label": "solve4_depth10_jsonfix4_20260426_165741"
+  },
+  "final_status": "plausible_progress",
+  "best_state": {
+    "id": "state_a10fde98",
+    "problem_id": "erdos_004",
+    "depth": 2,
+    "subgoals": [
+      "Milestone 1: reduction from prime-free interval to p_{n+1}-p_n bound",
+      "Milestone 2: valid CRT covering lemma with pairwise-coprime structure",
+      "Milestone 3: parameter-growth lemma linking N, Q, and n",
+      "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]",
+      "formalize: â constants c1, c2 >0 such that for arbitrarily large k, there exist distinct primes q1<...<q_r â¤ k log k, exponents e_i â¥1 with m_i = q_i^{e_i} pairwise coprime, Q=â m_i â¤ exp(c1 k), and residues r_i mod m_i s.t. âª_i {d â [1, L] : d â¡ r_i mod m_i} = [1,L] with L â¥ c2 (log Q log log Q log log log log Q) / (log log log Q)^2.",
+      "formalize: If there are infinitely many prime-free intervals (N, N + L] with N â¥ 1, L > 2 C \\frac{\\log N \\log\\log N \\log\\log\\log\\log N}{(\\log\\log\\log N)^2}, then for n = \\pi(N), we have p_{n+1} - p_n > C \\frac{\\log n \\log\\log n \\log\\log\\log\\log n}{(\\log\\log\\log n)^2} \\log n for infinitely many n, using li(N) bounds."
+    ],
+    "assumptions": [
+      "milestone:crt_covering",
+      "milestone:parameter_growth",
+      "milestone:reduction_gap_to_pn"
+    ],
+    "accepted_claims": [],
+    "rejected_claims": [],
+    "retrieved_lemmas": [
+      "move_naturalproofs_proofwiki_5e89d146b4788138",
+      "move_naturalproofs_proofwiki_6da5b7d91d63504b",
+      "move_naturalproofs_proofwiki_1d32258787318698",
+      "move_naturalproofs_stacks_47acd6da8f08a29d",
+      "move_naturalproofs_proofwiki_da9311459cf9c885",
+      "move_naturalproofs_proofwiki_5391ae90a5ccd29f",
+      "move_naturalproofs_proofwiki_02c7116ff23aa60c",
+      "move_naturalproofs_proofwiki_4ef03e6024c03449",
+      "move_naturalproofs_proofwiki_0d50a18a74051435",
+      "move_naturalproofs_proofwiki_2363e11252c53588"
+    ],
+    "moves": [
+      {
+        "id": "move_llm_2",
+        "move_type": "auxiliary_lemma",
+        "claim": "â constants c1, c2 >0 such that for arbitrarily large k, there exist distinct primes q1<...<q_r â¤ k log k, exponents e_i â¥1 with m_i = q_i^{e_i} pairwise coprime, Q=â m_i â¤ exp(c1 k), and residues r_i mod m_i s.t. âª_i {d â [1, L] : d â¡ r_i mod m_i} = [1,L] with L â¥ c2 (log Q log log Q log log log log Q) / (log log log Q)^2.",
+        "rationale": "Standard ErdÅs-Rankin covering construction using prime powers for distinct primes; quantitative bounds from greedy covering or known tables tuned to match target growth.",
+        "test_plan": "Implement small k=5,10 in Lean/Python: find explicit m_i, r_i covering [1,L]; scale to verify growth; if Lean times out, fallback to existence via combinatorial argument.",
+        "dependencies": [
+          "Existence of covering systems with distinct prime power moduli",
+          "Primorial growth: log (primorial_k) â¼ k"
+        ],
+        "expected_effect": "Provides the CRT covering for prime-free intervals of target length, advancing to parameter linking.",
+        "risk": "medium",
+        "source": "llm",
+        "matched_prior_case_ids": [],
+        "why_this_applies_here": "Directly matches milestone 2; pairwise-coprime prime powers standard for CRT solvability without conflicts.",
+        "required_preconditions": [
+          "Uncertain: exact constants c1,c2; assumes known covering densities"
+        ],
+        "how_to_falsify_fast": "For k=10, compute max L coverable with râ¤10 prime powers â¤ exp(10); if L < 10 log( exp(10) ) say, falsify growth.",
+        "target_milestone": "crt_covering",
+        "theorem_chain_ids": [],
+        "lean_obligations": []
+      },
+      {
+        "id": "move_llm_0",
+        "move_type": "reduction",
+        "claim": "If there are infinitely many prime-free intervals (N, N + L] with N â¥ 1, L > 2 C \\frac{\\log N \\log\\log N \\log\\log\\log\\log N}{(\\log\\log\\log N)^2}, then for n = \\pi(N), we have p_{n+1} - p_n > C \\frac{\\log n \\log\\log n \\log\\log\\log\\log n}{(\\log\\log\\log n)^2} \\log n for infinitely many n, using li(N) bounds.",
+        "rationale": "Standard transfer: p_n â¤ N < p_{n+1}, so gap > L; PNT gives \\log n â¼ \\log N, matching log-scale terms asymptotically for large N.",
+        "test_plan": "Symbolically verify inequality L > f(n) using \\pi(N) â¼ N / \\log N and change of variables; Lean tactic with real_asymp or logssimp.",
+        "dependencies": [
+          "Prime Number Theorem (li(N) bounds)",
+          "Monotonicity of \\pi"
+        ],
+        "expected_effect": "Completes Milestone 1, reduces main goal to prime-free intervals.",
+        "risk": "low",
+        "source": "llm",
+        "matched_prior_case_ids": [],
+        "why_this_applies_here": "Direct analog to ErdÅs-Rankin reductions; log terms match problem exactly up to constants.",
+        "required_preconditions": [
+          "PNT: |\\pi(N) - li(N)| = o(N / \\log N)"
+        ],
+        "how_to_falsify_fast": "Check if \\log n = \\log \\pi(N) â¼ \\log(N / \\log N) = \\log N + o(1) preserves the iterated log ratios; numeric eval for N=exp(exp(10)).",
+        "target_milestone": "reduction_interval_to_gap",
+        "theorem_chain_ids": [],
+        "lean_obligations": []
+      }
+    ],
+    "evaluations": [
+      {
+        "move_id": "move_llm_2",
+        "status": "plausible_informal",
+        "score_delta": 0.0,
+        "reason": "Mapped Lean theorem is tautological; formal progress not credited.",
+        "evidence": {
+          "lean_formalization_attempted": true,
+          "rejection_category": "tautological_mapping_blocked"
+        },
+        "counterexample": null
+      },
+      {
+        "move_id": "move_llm_0",
+        "status": "plausible_informal",
+        "score_delta": 0.0,
+        "reason": "Mapped Lean theorem is tautological; formal progress not credited.",
+        "evidence": {
+          "lean_formalization_attempted": true,
+          "rejection_category": "tautological_mapping_blocked"
+        },
+        "counterexample": null
+      }
+    ],
+    "experiments": [],
+    "score": 10.899999999999999,
+    "trace": [
+      "initialized state",
+      "depth=1 move=move_llm_2 status=plausible_informal novelty=0.20 milestones=['crt_covering', 'parameter_growth'] score=4.70",
+      "depth=2 move=move_llm_0 status=plausible_informal novelty=0.20 milestones=['reduction_gap_to_pn', 'parameter_growth'] score=10.90"
+    ],
+    "stalled_steps": 0
+  },
+  "rlm_notes": {
+    "failure_analysis": "analogy: [{'move_id': 'analogy_erdos_rankin', 'description': 'Analogize to ErdÅ\\x91sâ\\x80\\x93Rankin: construct primes in short intervals avoiding primes in long intervals via sieve. Target lemma: infinitely many n with no primes in (p_n, p_n + f(n) log n) for f(n) = C (log log n log_4 n)/(log_3 n)^2. Informal sketch first, map to non-trivial Lean.', 'priority': 'high'}, {'move_id': 'decompose_bound', 'description': 'Simplify bound via analogy to weaker ErdÅ\\x91s gaps >> log n log log n. Prove base case >> log n * log log n, then iterate with log log log factors. Seek lemma on primorials or Jacobsthal function J(N!) >> f(log N). Avoid direct mapping; build stepwise.', 'priority': 'medium'}, {'move_id': 'fallback_sieve', 'description': 'Fallback to elementary sieve analogy (ErdÅ\\x91s 1935 style): show gaps > c log n log log log n / log log n first. Use Lean for J(p#) lower bound non-trivially. Reset beam with numeric eval on small n to validate direction.', 'priority': 'medium'}, {'move_id': 'inductive_lift', 'description': \"Lift weaker known theorems inductively. Analogy: from CramÃ©r >> log n to Rankin via iterated sieving. Propose non-tautological lemma: if gaps > g(n), then > g(n) * h(log log n) infinitely often. Target graph nodes near 'prime_gap_lower_bounds'.\", 'priority': 'low'}]\ncounterexample: [{'move_id': 'numeric_primes_1e12', 'description': 'Compute primes up to 10^12 via sieve, max gaps, check inequality for C=0.1/1/10 over n=10^6+. Output stats/table.', 'priority': 'high', 'type': 'numeric', 'novelty_boost': True}, {'move_id': 'lit_search_gaps', 'description': \"Search for 'Ford-Green-Konyagin-Tao prime gaps' or 'largest known prime gap lower bounds'. Extract matching theorems/URLs for import.\", 'priority': 'high', 'type': 'informal_search', 'novelty_boost': True}, {'move_id': 'bound_upper_simple', 'description': 'Prove trivial upper bound p_{n+1}-p_n < 2 log n * n^{1/2} via sieve of Eratosthenes density, avoiding tautologies.', 'priority': 'medium', 'type': 'formal_simple', 'lean_tautology_risk': 'low'}, {'move_id': 'counterex_small_C', 'description': 'For C=1000, numerically scan n<10^10 for violations (gaps too small); if none, scale down C logarithmically.', 'priority': 'medium', 'type': 'numeric_counter', 'novelty_boost': True}, {'move_id': 'diversify_gap_est', 'description': 'Informal: derive heuristic gap ~ log^2 n via Cramer, compare to bound; plot loglog terms for n=exp(exp(10)).', 'priority': 'low', 'type': 'heuristic'}]\nreformulation: {'analysis': 'Stall due to repeated tautological Lean mappings (all beam states rejected despite plausible informal evals). Dropping scores (-1.5 to -3.5), low novelty (0.2), and numeric stall reason suggest over-reliance on trivial formalizations. Need novel reformulations for incremental, non-tautological progress using prime gap lemmas.', 'candidate_moves': [{'move_id': 'weaken_to_rankin', 'description': 'Reformulate to known Rankin bound: gaps > (1-o(1)) \\\\frac{\\\\log n \\\\log\\\\log n \\\\log\\\\log\\\\log\\\\log n}{(\\\\log\\\\log\\\\log n)^2} infinitely often, matching existing theorems.'}, {'move_id': 'incremental_log_tower', 'description': 'Split into lemmas: prove base > c log n (ErdÅ\\x91s), then > c log n log log n, building log tower step-by-step to avoid tautologies.'}, {'move_id': 'sieve_numeric', 'description': 'Shift to numeric: compute gaps up to 10^12+ via sieves, verify bound holds for large n, generate data for formal induction.'}, {'move_id': 'bound_via_chebyshev', 'description': 'Reformulate as Î¸(p_{n+1}) - Î¸(p_n) > bound using Chebyshev function, linking to mathlib analysis/real logs.'}, {'move_id': 'contrapositive_inf_many', 'description': 'Rephrase as: for any C, limsup (p_{n+1}-p_n)/bound = â\\x88\\x9e, emphasizing density via limsup for novel mapping.'}]}\nreduction: {'analysis': \"Beam stalled at depth 10 with negative scores (-1.5 to -3.5) and zero formal progress due to tautological Lean mappings (all rejected). Low novelty (0.2) and 'numeric' stall indicate repetitive informal proofs without advancing state; theorem graph is large but unused effectively.\", 'candidate_moves': [{'move_id': 'move_numeric_explore', 'description': 'Compute explicit prime gaps for n up to 10^12+ using sieves; check if inequality holds for C=1, plot ratios to assess truth empirically and generate counterexample hypotheses.'}, {'move_id': 'move_graph_lookup', 'description': \"Query theorem_graph for 'prime_gap', 'Erdos-Rankin', 'pnt', 'loglog' keywords; retrieve top 10 relevant nodes/edges on large gaps (e.g., limsup (p_{n+1}-p_n)/log n >= phi(log log n)) for reduction.\"}, {'move_id': 'move_pivot_weak', 'description': 'Reduce to known weaker bound: prove inf many gaps > c log n log log n / log log log n (Rankin-style); map to graph theorems, build up to full statement.'}, {'move_id': 'move_informal_sketch', 'description': 'Generate full informal proof outline citing ErdÅ\\x91s-Rankin-Maier-FGKT bounds (gaps ~ log n * log log n * log log log log n / (log log log n)^2); flag as TRUE with reference, defer formalization.'}, {'move_id': 'move_ambitious_theorem', 'description': \"Attempt direct mapping to non-tautological graph theorems like 'exists_infinitely_many_prime_gaps_lower_bound'; use beam with higher risk/reward params to escape tautology trap.\"}]}\nconstruction: {'analysis': \"Stalled at depth 10 on tautological Lean mappings (no formal progress); low novelty (0.2) and negative scores indicate repetitive failure. Stall reason 'numeric' suggests pivot to empirical checks on prime gaps for large n to build intuition/evidence before formal steps. With 93k theorems available, target gap-specific lemmas or unconditional bounds.\", 'candidate_moves': [{'move_id': 'move_numeric_explore', 'description': 'Compute prime gaps for n up to 10^12+; check if expression exceeds C=1,10 for infinitely many via heuristics (e.g., primorial gaps). Output plots/data.', 'priority': 1, 'tailored_to': 'stall_reason_numeric'}, {'move_id': 'move_literature_search', 'description': 'Query known prime gap lower bounds (ErdÅ\\x91s-Rankin-Ford-GKT); extract exact statement matching ~log n * loglog n loglogloglog n / (logloglog n)^2; cite arxiv/papers.', 'priority': 2, 'tailored_to': 'tautological_blocked'}, {'move_id': 'move_decompose_bound', 'description': 'Informally decompose: prove weaker gap > c log n loglog n first (known ErdÅ\\x91s), then bootstrap iterated logs. Avoid Lean; stay informal until non-tautological.', 'priority': 3, 'tailored_to': 'plausible_informal'}, {'move_id': 'move_graph_query_gaps', 'description': \"Search theorem_graph for 'prime_gap', 'p_n+1 - p_n', 'log n lower_bound' nodes (93600 avail.); beam expand from top 10 matches, filter non-tautological.\", 'priority': 4, 'tailored_to': 'theorem_graph'}, {'move_id': 'move_fallback_contradict', 'description': 'Assume false (finitely many); derive contradiction via sieve/primorial construction yielding larger gaps infinitely often.', 'priority': 5, 'tailored_to': 'beam_stall_depth_10'}]}\nproof_skeleton: [{'move_id': 'nt_library_inject', 'description': 'Inject non-tautological primes lib theorems (PNT, Bertrand, gap bounds) to bootstrap.', 'priority': 1, 'prompt': 'Formally state and cite a known result like prime number theorem (pi(n) ~ n/log n) or weak gap bound (p_{n+1}-p_n = Omega(log n)) from mathlib.analysis.number_theory.', 'novelty_boost': True, 'target_score_improvement': 3.0}, {'move_id': 'gap_bound_search', 'description': 'Theorem graph search for prime gaps; target keywords to find pre-existing lemmas.', 'priority': 1, 'keywords': ['prime_gap', 'p_n', 'log n', 'pi.n', 'prime.gap', 'Erdos', 'Rankin'], 'graph_dir': '/home/aggerio/temp/Ingenuity_Engine/erdos-engine/data/theorem_graph', 'novelty_boost': True}, {'move_id': 'sieve_sketch', 'description': 'Informal sieve/ErdÅ\\x91s construction for large gaps, delay formalization.', 'priority': 2, 'prompt': 'Sketch probabilistic sieve argument: construct interval (n, n + c log n loglog n / (logloglog n)^2) with few primes via density.', 'eval_target': 'plausible_informal'}, {'move_id': 'weaken_and_scale', 'description': 'Prove simpler case (e.g., gaps > C log n loglog n) using known proofs, then iterate.', 'priority': 2, 'prompt': 'First prove infinitely many gaps > C log n loglog n, citing CramÃ©r or Westzynthius.', 'avoid_tautology': True}, {'move_id': 'beam_diversify', 'description': 'Force diverse beams: mix informal reasoning, counterexample checks, lit review.', 'priority': 3, 'params': {'beam_width': 8, 'novelty_weight': 0.5, 'depth_limit': 15}}]",
+    "reformulations": [],
+    "subproblems": [],
+    "candidate_moves": [],
+    "recommended_next_search_bias": "",
+    "bridge_lemmas": [],
+    "blocker_lemmas": [],
+    "validator_lemmas": []
+  },
+  "lean_preflight": {
+    "elan": "elan 4.2.1 (3d5138e15 2026-03-18)",
+    "lake": "Lake version 5.0.0-src+3dc1a08 (Lean version 4.30.0-rc2)",
+    "lake_build": "Build completed successfully (8334 jobs).\n"
+  },
+  "generated_at": "2026-04-26T17:29:22.275989+00:00"
+}

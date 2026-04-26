@@ -1,0 +1,57 @@
+{
+  "problem": {
+    "id": "erdos_004",
+    "title": "Erdos Problem #4",
+    "statement": "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]",
+    "tags": [
+      "number theory",
+      "primes"
+    ],
+    "status": "solved",
+    "known_solution_path": "known_solution.md",
+    "source_url": "https://www.erdosproblems.com/4",
+    "difficulty_guess": "unknown",
+    "computationally_testable": true,
+    "formalizable": true
+  },
+  "config": {
+    "beam_width": 5,
+    "max_depth": 10,
+    "moves_per_state": 8,
+    "use_rlm": true,
+    "attempts_root": "/home/aggerio/temp/Ingenuity_Engine/attempts_erdos",
+    "run_label": "retry_again_20260427_0125",
+    "curriculum_goal": null
+  },
+  "final_status": "stalled",
+  "best_state": {
+    "id": "state_8c056d10",
+    "problem_id": "erdos_004",
+    "depth": 0,
+    "subgoals": [
+      "Milestone 1: reduction from prime-free interval to p_{n+1}-p_n bound",
+      "Milestone 2: valid CRT covering lemma with pairwise-coprime structure",
+      "Milestone 3: parameter-growth lemma linking N, Q, and n",
+      "Is it true that, for any $C>0$, there are infinitely many $n$ such that\\[p_{n+1}-p_n> C\\frac{\\log\\log n\\log\\log\\log\\log n}{(\\log\\log \\log n)^2}\\log n?\\]"
+    ],
+    "assumptions": [],
+    "accepted_claims": [],
+    "rejected_claims": [],
+    "retrieved_lemmas": [],
+    "moves": [],
+    "evaluations": [],
+    "experiments": [],
+    "score": 0.0,
+    "trace": [
+      "initialized state"
+    ],
+    "stalled_steps": 0
+  },
+  "rlm_notes": {},
+  "lean_preflight": {
+    "elan": "elan 4.2.1 (3d5138e15 2026-03-18)",
+    "lake": "Lake version 5.0.0-src+3dc1a08 (Lean version 4.30.0-rc2)",
+    "lake_build": "Build completed successfully (8334 jobs).\n"
+  },
+  "generated_at": "2026-04-26T19:56:49.891377+00:00"
+}
